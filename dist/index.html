@@ -1,0 +1,65 @@
+<html>
+  <head>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.7/angular.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.4.1/d3.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/zone.js/0.7.4/zone.min.js"></script>
+
+    <script src="../src/chikatetsu.js"></script>
+
+    <style>
+    svg {
+      box-sizing: border-box;
+      border: 1px solid rgb(212, 212, 212);
+      /*cursor: none;*/
+    }
+    
+    circle {
+      fill: rgba(0, 0, 0, .2);
+    }
+
+    line {
+      stroke: rgb(212, 212, 212);
+      stroke-width: 1px;
+      shape-rendering: crispEdges;
+    }
+
+    path.rail {
+      stroke: #000;
+      stroke-width: 10px;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .pointer.hide {
+      display: none;
+    }
+
+    .stop {
+      border: 2px solid #000;
+      border-radius: 8px;
+      width: 16px;
+      height: 16px;
+      background: #fff;
+      margin: 0 10px;
+    }
+
+    .joint {
+      stroke: red;
+      stroke-width: 1px;
+    }
+    </style>
+  </head>
+  <body>
+
+    <chikatetsu topic="'stm'"></chikatetsu>
+
+    <script>
+      Zone.current.run(function() {
+        angular.bootstrap(document, ['chikatetsu']);
+      });
+    </script>
+  </body>
+</html>

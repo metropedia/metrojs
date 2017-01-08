@@ -1,0 +1,50 @@
+<div>
+  <h1>Chikatetsu</h1>
+  <div>
+    <button class="btn btn-xs"
+            ng-disabled="0"
+            ng-click="ctrl.newLine();">New line</button>
+    <button class="btn btn-xs"
+            ng-disabled="0"
+            ng-click="ctrl.select();">Select</button>
+    <button class="btn btn-xs"
+            ng-disabled="0"
+            ng-click="ctrl.draw();">Draw</button>
+    <button class="btn btn-xs"
+            ng-disabled="1">Add Stop</button>
+    <button class="btn btn-xs"
+            ng-disabled="1">Delete Stop</button>
+    <button class="btn btn-xs"
+            ng-disabled="0"
+            ng-click="ctrl.useStraightLine();">Straight</button>
+    <button class="btn btn-xs"
+            ng-disabled="0"
+            ng-click="ctrl.useCurlyLine();">Curly</button>
+    <button class="btn btn-xs"
+            ng-disabled="0"
+            ng-click="ctrl.flipLast();">flip</button>
+  </div>
+</div>
+<div>
+  
+</div>
+<div>
+  <h1>Lines</h1> 
+  <div ng-repeat="line in ctrl.lines track by $index">
+    <form class="form-inline">
+      <div class="input-group-sm">
+        <label>Name</label>
+        <input type="text" class="form-control" placeholder="Yamanote Line">
+      </div>
+    </form>
+    <div class="panel panel-default">
+      <div class="panel-body">
+        <div class="stop"></div>
+        <div class="stop"></div>
+        <div class="stop"></div>
+        <div class="stop"></div>
+        <div class="stop"></div>
+      </div>
+    </div>
+  </div>
+</div>
