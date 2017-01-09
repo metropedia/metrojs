@@ -14,6 +14,25 @@
       border: 1px solid rgb(212, 212, 212);
       /*cursor: none;*/
     }
+
+    svg.input-mode-select .joint {
+      display: inherit;
+    }
+
+    svg.input-mode-select .joint.hover,
+    svg.input-mode-select .joint:hover {
+      fill: rgba(255, 0, 0, .2);
+    }
+
+    .joint {
+      stroke: rgba(0, 0, 0, .5);
+      stroke-width: 1px;
+      display: none;
+    }
+
+    .joint.current {
+      stroke: red;
+    }
     
     circle {
       fill: rgba(0, 0, 0, .2);
@@ -44,11 +63,6 @@
       height: 16px;
       background: #fff;
       margin: 0 10px;
-    }
-
-    .joint {
-      stroke: red;
-      stroke-width: 1px;
     }
     </style>
   </head>

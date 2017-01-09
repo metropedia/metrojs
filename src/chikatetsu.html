@@ -5,20 +5,20 @@
             ng-disabled="0"
             ng-click="ctrl.newLine();">New line</button>
     <button class="btn btn-xs"
-            ng-disabled="0"
-            ng-click="ctrl.select();">Select</button>
+            ng-hide="ctrl.inputMode == 'edit'"
+            ng-click="ctrl.editLine();">Switch to Edit Mode</button>
     <button class="btn btn-xs"
-            ng-disabled="0"
-            ng-click="ctrl.draw();">Draw</button>
+            ng-hide="ctrl.inputMode == 'draw'"
+            ng-click="ctrl.draw();">Switch to Drawing Mode</button>
     <button class="btn btn-xs"
             ng-disabled="1">Add Stop</button>
     <button class="btn btn-xs"
             ng-disabled="1">Delete Stop</button>
     <button class="btn btn-xs"
-            ng-disabled="0"
+            ng-class="{ 'btn-primary': ctrl.pathType == 'straight' }"
             ng-click="ctrl.useStraightLine();">Straight</button>
     <button class="btn btn-xs"
-            ng-disabled="0"
+            ng-class="{ 'btn-primary': ctrl.pathType == 'curly' }"
             ng-click="ctrl.useCurlyLine();">Curly</button>
     <button class="btn btn-xs"
             ng-disabled="0"
