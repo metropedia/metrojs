@@ -15,7 +15,7 @@ angular.module('chikatetsu', [])
 
   var ctrl = this;
       ctrl.topic = $scope.topic;
-      ctrl.lines = [];
+      ctrl.metroLines = [];
       ctrl.isDrawing = false;
       ctrl.currentLine = null;
       ctrl.shadePos = {x: undefined, y: undefined};
@@ -23,7 +23,7 @@ angular.module('chikatetsu', [])
       ctrl.inputMode = 'draw';
       ctrl.currentEditJoint = null;
       ctrl.schemas = {
-        line: {
+        metroLine: {
           name: '',
           path: [],
           stops: []
@@ -84,7 +84,7 @@ angular.module('chikatetsu', [])
     }
   };
 
-  var drawLinePath = function(x1, y1, x2, y2, type, flipped, linePath) {
+  var drawLinePath = function(x1, y1, x2, y2, type, flipped, linePath, insertBefore) {
     var isHead = typeof x1 != 'undefined' && typeof x2 != 'undefined';
     var path = d3.path();
     path.moveTo(x1, y1);
@@ -99,36 +99,60 @@ angular.module('chikatetsu', [])
     }
     if (linePath) {
       linePath
-        .attr(isHead ? "d" : "_d", path.toString())
-        .classed("rail", true)
+        .attr(isHead ? 'd' : '_d', path.toString())
+        .classed('rail', true)
     } else {
-      var linePath = layerLinePaths
-        .append("path")
-        .attr(isHead ? "d" : "_d", path.toString())
-        .classed("rail", true)
+      var linePath;
+      var beforeIndex;
+      if (insertBefore) {
+        beforeIndex = layerLinePaths
+          .selectAll('.rail').data()
+          .indexOf(insertBefore.data()[0]) + 1
+        ;
+        linePath = layerLinePaths.insert('path', ':nth-child(' + beforeIndex + ')');
+      } else {
+        linePath = layerLinePaths.append('path');
+      }
+      linePath
+        .attr(isHead ? 'd' : '_d', path.toString())
+        .classed('rail', true)
       ;
+
       var joint = layerJoints.selectAll()
-        .data([{x: x2, y: y2 }])
-        .enter()
-        .append('circle')
-          .attr('cx', function(d) { return d.x; })
-          .attr('cy', function(d) { return d.y; })
-          .attr('r', r)
-          .attr('class', 'joint')
+          .data([{x: x2, y: y2 }])
+          .enter()
+      ;
+      if (insertBefore && beforeIndex) {
+        joint = joint.insert('circle', ':nth-child(' + beforeIndex + ')');
+      } else {
+        joint = joint.append('circle');
+      }
+      joint
+        .attr('cx', function(d) { return d.x; })
+        .attr('cy', function(d) { return d.y; })
+        .attr('r', r)
+        .attr('class', 'joint')
         .on('mousedown', function() {
           if (ctrl.currentEditJoint) {
-            d3.select(ctrl.currentEditJoint)
+            d3.select(ctrl.currentEditJoint.joint)
               .classed('current', false);
           }
           d3.select(this).classed('current', true);
-          ctrl.currentEditJoint = this;
-          console.log(d3.select(ctrl.currentEditJoint).datum().linePath.datum());
+          ctrl.currentEditJoint = {
+            linePath: linePath,
+            joint: this,
+            data: d3.select(this).datum().linePath.datum()
+          }; this;
+          $scope.$apply();
+          console.log(ctrl.currentEditJoint.data)
         })
         .call(
           d3.drag()
             .on('drag', evtJointDrag)
             .on('end', function() {
               d3.select(this).classed('hover', false);
+              ctrl.currentEditJoint.data = d3.select(this).datum().linePath.datum();
+              $scope.$apply();
             })
         )
       ;
@@ -169,17 +193,6 @@ angular.module('chikatetsu', [])
       .attr('cy', y2)
     ;
     ctrl.shadePos = {x: x2, y: y2};
-
-    ctrl.currentLine.path.push({
-       x1: x1,
-       y1: y1,
-       x2: x2,
-       y2: y2,
-       type: ctrl.pathType,
-       flipped: false,
-       linePath: linePath
-    });
-
   };
 
   var svg = d3.select($element.find('div')[1]).append('svg')
@@ -234,12 +247,12 @@ angular.module('chikatetsu', [])
       .attr('cy', function(d) { return d.y; })
       .attr('r', r);
 
-  ctrl.newLine = function() {
-    ctrl.currentLine = angular.copy(ctrl.schemas.line);
-    ctrl.lines.push(ctrl.currentLine);
+  ctrl.newMetroLine = function() {
+    ctrl.currentLine = angular.copy(ctrl.schemas.metroLine);
+    ctrl.metroLines.push(ctrl.currentLine);
   };
 
-  ctrl.editLine = function() {
+  ctrl.editMetroLine = function() {
     ctrl.inputMode = 'edit';
     pointer.
       classed('hide', true)
@@ -265,28 +278,77 @@ angular.module('chikatetsu', [])
     ;
   };
 
-  ctrl.useStraightLine = function() {
+  ctrl.useStraightPath = function() {
     ctrl.pathType = 'straight';
   };
 
-  ctrl.useCurlyLine = function() {
+  ctrl.useCurlyPath = function() {
     ctrl.pathType = 'curly';
   };
 
   ctrl.flipLast = function() {
-    var linePathData = ctrl.currentLine.path[ctrl.currentLine.path.length - 1];
+    var jointData = d3.select('.joint:last-child').datum();
+    var linePath = jointData.linePath;
+    var linePathData = linePath.datum();
     linePathData.flipped = !linePathData.flipped;
     linePathData.linePath = drawLinePath(
       linePathData.x1, linePathData.y1,
       linePathData.x2, linePathData.y2,
       linePathData.type,
       linePathData.flipped,
-      linePathData.linePath
+      linePath
     );
-    ctrl.currentLine.path[ctrl.currentLine.path.length - 1] = linePathData;
   };
 
-  ctrl.newLine();
+  ctrl.applyLinePathChange = function() {
+    var linePathJoint = ctrl.currentEditJoint;
+    drawLinePath(
+      linePathJoint.data.x1, linePathJoint.data.y1,
+      linePathJoint.data.x2, linePathJoint.data.y2,
+      linePathJoint.data.type,
+      linePathJoint.data.flipped,
+      linePathJoint.linePath
+    );
+  };
+
+  ctrl.splitLinePath = function() {
+    var linePathJoint = ctrl.currentEditJoint;
+    var d = linePathJoint.data;
+    var dx = (d.x2 - d.x1)/2;
+    var dy = (d.y2 - d.y1)/2;
+    var left = {
+      x1: d.x1, y1: d.y1,
+      x2: d.x1 + dx, y2: d.y1 + dy,
+      type: d.type,
+      flipped: d.flipped
+    };
+    var right = {
+      x1: d.x2 - dx, y1: d.y2 - dy,
+      x2: d.x2, y2: d.y2,
+      type: d.type,
+      flipped: d.flipped
+    };
+
+    drawLinePath(
+      left.x1, left.y1,
+      left.x2, left.y2,
+      left.type, left.flipped,
+      null,
+      linePathJoint.linePath
+    );
+    drawLinePath(
+      right.x1, right.y1,
+      right.x2, right.y2,
+      right.type, right.flipped,
+      null,
+      linePathJoint.linePath
+    );
+    linePathJoint.joint.remove();
+    linePathJoint.linePath.remove();
+
+  };
+
+  ctrl.newMetroLine();
 }])
 
 

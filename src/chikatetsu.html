@@ -1,28 +1,58 @@
 <div>
   <h1>Chikatetsu</h1>
   <div>
-    <button class="btn btn-xs"
-            ng-disabled="0"
-            ng-click="ctrl.newLine();">New line</button>
-    <button class="btn btn-xs"
-            ng-hide="ctrl.inputMode == 'edit'"
-            ng-click="ctrl.editLine();">Switch to Edit Mode</button>
-    <button class="btn btn-xs"
-            ng-hide="ctrl.inputMode == 'draw'"
-            ng-click="ctrl.draw();">Switch to Drawing Mode</button>
-    <button class="btn btn-xs"
-            ng-disabled="1">Add Stop</button>
-    <button class="btn btn-xs"
-            ng-disabled="1">Delete Stop</button>
-    <button class="btn btn-xs"
-            ng-class="{ 'btn-primary': ctrl.pathType == 'straight' }"
-            ng-click="ctrl.useStraightLine();">Straight</button>
-    <button class="btn btn-xs"
-            ng-class="{ 'btn-primary': ctrl.pathType == 'curly' }"
-            ng-click="ctrl.useCurlyLine();">Curly</button>
-    <button class="btn btn-xs"
-            ng-disabled="0"
-            ng-click="ctrl.flipLast();">flip</button>
+    <div class="control-panel">
+      <button class="btn btn-xs"
+              ng-disabled="0"
+              ng-click="ctrl.newMetroLine();">New line</button>
+      <button class="btn btn-xs"
+              ng-hide="ctrl.inputMode == 'edit'"
+              ng-click="ctrl.editMetroLine();">Switch to Edit Mode</button>
+      <button class="btn btn-xs"
+              ng-hide="ctrl.inputMode == 'draw'"
+              ng-click="ctrl.draw();">Switch to Drawing Mode</button>
+      <button class="btn btn-xs"
+              ng-disabled="1">Add Stop</button>
+      <button class="btn btn-xs"
+              ng-disabled="1">Delete Stop</button>
+      <button class="btn btn-xs"
+              ng-class="{ 'btn-primary': ctrl.pathType == 'straight' }"
+              ng-click="ctrl.useStraightPath();">Straight</button>
+      <button class="btn btn-xs"
+              ng-class="{ 'btn-primary': ctrl.pathType == 'curly' }"
+              ng-click="ctrl.useCurlyPath();">Curly</button>
+      <button class="btn btn-xs"
+              ng-disabled="0"
+              ng-click="ctrl.flipLast();">flip</button>
+    </div>
+    <div class="line-details"
+         ng-hide="ctrl.inputMode == 'draw'">
+      <!--
+      <pre>{{ctrl.currentEditJoint.data | json}}</pre>
+      -->
+      x1<input type="number" step="20" ng-model="ctrl.currentEditJoint.data.x1"
+               ng-change="ctrl.applyLinePathChange()">
+      y1<input type="number" step="20" ng-model="ctrl.currentEditJoint.data.y1"
+               ng-change="ctrl.applyLinePathChange()">
+      x2<input type="number" step="20" ng-model="ctrl.currentEditJoint.data.x2"
+               ng-change="ctrl.applyLinePathChange()">
+      y2<input type="number" step="20" ng-model="ctrl.currentEditJoint.data.y2"
+               ng-change="ctrl.applyLinePathChange()">
+      type
+        <select ng-model="ctrl.currentEditJoint.data.type"
+                ng-options="value for value in ['straight', 'curly']"
+                ng-change="ctrl.applyLinePathChange()">
+        </select>
+      flipped
+        <select ng-model="ctrl.currentEditJoint.data.flipped"
+                ng-options="value for value in [true, false]"
+                ng-change="ctrl.applyLinePathChange()">
+        </select>
+      split
+        <button class="btn btn-xs"
+                ng-disabled="0"
+                ng-click="ctrl.splitLinePath();">Split</button>
+    </div>
   </div>
 </div>
 <div>
@@ -30,7 +60,7 @@
 </div>
 <div>
   <h1>Lines</h1> 
-  <div ng-repeat="line in ctrl.lines track by $index">
+  <div ng-repeat="line in ctrl.metroLines track by $index">
     <form class="form-inline">
       <div class="input-group-sm">
         <label>Name</label>
