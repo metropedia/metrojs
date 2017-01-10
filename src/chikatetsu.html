@@ -12,9 +12,9 @@
               ng-hide="ctrl.inputMode == 'draw'"
               ng-click="ctrl.draw();">Switch to Drawing Mode</button>
       <button class="btn btn-xs"
-              ng-disabled="1">Add Stop</button>
+              ng-disabled="1">Add Station</button>
       <button class="btn btn-xs"
-              ng-disabled="1">Delete Stop</button>
+              ng-disabled="1">Delete Station</button>
       <button class="btn btn-xs"
               ng-class="{ 'btn-primary': ctrl.pathType == 'straight' }"
               ng-click="ctrl.useStraightPath();">Straight</button>
@@ -69,11 +69,11 @@
     </form>
     <div class="panel panel-default">
       <div class="panel-body">
-        <div class="stop"></div>
-        <div class="stop"></div>
-        <div class="stop"></div>
-        <div class="stop"></div>
-        <div class="stop"></div>
+        <div class="station"></div>
+        <div class="station"></div>
+        <div class="station"></div>
+        <div class="station"></div>
+        <div class="station"></div>
       </div>
     </div>
   </div>

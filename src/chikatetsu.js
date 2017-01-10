@@ -17,7 +17,7 @@ angular.module('chikatetsu', [])
       ctrl.topic = $scope.topic;
       ctrl.metroLines = [];
       ctrl.isDrawing = false;
-      ctrl.currentLine = null;
+      ctrl.currentMetroLine = null;
       ctrl.shadePos = {x: undefined, y: undefined};
       ctrl.pathType = 'straight';
       ctrl.inputMode = 'draw';
@@ -25,8 +25,11 @@ angular.module('chikatetsu', [])
       ctrl.schemas = {
         metroLine: {
           name: '',
-          path: [],
-          stops: []
+          layers: {
+
+          },
+          paths: [],
+          stations: []
         }
       };
 
@@ -85,6 +88,10 @@ angular.module('chikatetsu', [])
   };
 
   var drawLinePath = function(x1, y1, x2, y2, type, flipped, linePath, insertBefore) {
+    var layerMetroLine = ctrl.currentMetroLine.layers.metroLine;
+    var layerLinePaths = ctrl.currentMetroLine.layers.linePaths;
+    var layerJoints = ctrl.currentMetroLine.layers.joints;
+
     var isHead = typeof x1 != 'undefined' && typeof x2 != 'undefined';
     var path = d3.path();
     path.moveTo(x1, y1);
@@ -202,10 +209,8 @@ angular.module('chikatetsu', [])
     .on('click', evtCanvasMouseClick)
   ;
 
-  var layerGridlines = svg.append('g');
-  var layerLinePaths = svg.append('g');
-  var layerJoints = svg.append('g');
-  var layerTop = svg.append('g');
+  var layerGridlines = svg.append('g').attr('class', 'layer-group');
+  var layerTop = svg.append('g').attr('class', 'layer-group');
 
   layerGridlines.selectAll()
     .data(d3.range(1, width / resolution))
@@ -248,8 +253,19 @@ angular.module('chikatetsu', [])
       .attr('r', r);
 
   ctrl.newMetroLine = function() {
-    ctrl.currentLine = angular.copy(ctrl.schemas.metroLine);
-    ctrl.metroLines.push(ctrl.currentLine);
+    var layerMetroLine = svg.append('g').attr('class', 'layer-group');
+    var layerLinePaths = layerMetroLine.append('g');
+    var layerJoints = layerMetroLine.append('g');
+    svg.node().appendChild(layerTop.node());
+
+    ctrl.shadePos = {x: undefined, y: undefined};
+
+    ctrl.currentMetroLine = angular.copy(ctrl.schemas.metroLine);
+    ctrl.currentMetroLine.layers.metroLine = layerMetroLine;
+    ctrl.currentMetroLine.layers.linePaths = layerLinePaths;
+    ctrl.currentMetroLine.layers.joints = layerJoints;
+
+    ctrl.metroLines.push(ctrl.currentMetroLine);
   };
 
   ctrl.editMetroLine = function() {
@@ -287,7 +303,11 @@ angular.module('chikatetsu', [])
   };
 
   ctrl.flipLast = function() {
-    var jointData = d3.select('.joint:last-child').datum();
+    var layerMetroLine = ctrl.currentMetroLine.layers.metroLine;
+    var layerLinePaths = ctrl.currentMetroLine.layers.linePaths;
+    var layerJoints = ctrl.currentMetroLine.layers.joints;
+
+    var jointData = layerJoints.select('.joint:last-child').datum();
     var linePath = jointData.linePath;
     var linePathData = linePath.datum();
     linePathData.flipped = !linePathData.flipped;
@@ -348,7 +368,7 @@ angular.module('chikatetsu', [])
 
   };
 
-  ctrl.newMetroLine();
+  //ctrl.newMetroLine();
 }])
 
 
