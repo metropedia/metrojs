@@ -5,14 +5,18 @@
       <button class="btn btn-xs"
               ng-disabled="0"
               ng-click="ctrl.newMetroLine();">New line</button>
+
+      <div class="btn-group btn-group-xs">
+        <button class="btn btn-xs"
+                ng-click="ctrl.editMetroLine();">Edit</button>
+        <button class="btn btn-xs"
+                ng-click="ctrl.draw();">Drawing</button>
+        <button class="btn btn-xs"
+                ng-click="ctrl.implement();">Implementation</button>
+      </div>
       <button class="btn btn-xs"
-              ng-hide="ctrl.inputMode == 'edit'"
-              ng-click="ctrl.editMetroLine();">Switch to Edit Mode</button>
-      <button class="btn btn-xs"
-              ng-hide="ctrl.inputMode == 'draw'"
-              ng-click="ctrl.draw();">Switch to Drawing Mode</button>
-      <button class="btn btn-xs"
-              ng-disabled="1">Add Station</button>
+              ng-disabled="0"
+              ng-click="ctrl.addStation()">Add Station</button>
       <button class="btn btn-xs"
               ng-disabled="1">Delete Station</button>
       <button class="btn btn-xs"
@@ -25,8 +29,8 @@
               ng-disabled="0"
               ng-click="ctrl.flipLast();">flip</button>
     </div>
-    <div class="line-details"
-         ng-hide="ctrl.inputMode == 'draw'">
+    <div class="line-details ng-hide"
+         ng-show="ctrl.inputMode == 'edit'">
       <!--
       <pre>{{ctrl.currentEditJoint.data | json}}</pre>
       -->
@@ -52,6 +56,13 @@
         <button class="btn btn-xs"
                 ng-disabled="0"
                 ng-click="ctrl.splitLinePath();">Split</button>
+    </div>
+    <div class="station-details ng-hide"
+         ng-show="ctrl.inputMode == 'implement'">
+      Position
+        <input type="number" step="1" min="0" max="100"
+               ng-model="ctrl.stationPosition"
+               ng-change="ctrl.moveStation()">%
     </div>
   </div>
 </div>

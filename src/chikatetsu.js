@@ -22,6 +22,8 @@ angular.module('chikatetsu', [])
       ctrl.pathType = 'straight';
       ctrl.inputMode = 'draw';
       ctrl.currentEditJoint = null;
+      ctrl.currentStation = null;
+      ctrl.stationPosition = 0;
       ctrl.schemas = {
         metroLine: {
           name: '',
@@ -104,9 +106,10 @@ angular.module('chikatetsu', [])
         path.quadraticCurveTo(x2, y1, x2, y2);
       }
     }
+    var pathString = path.toString();
     if (linePath) {
       linePath
-        .attr(isHead ? 'd' : '_d', path.toString())
+        .attr(isHead ? 'd' : '_d', pathString)
         .classed('rail', true)
     } else {
       var linePath;
@@ -121,7 +124,7 @@ angular.module('chikatetsu', [])
         linePath = layerLinePaths.append('path');
       }
       linePath
-        .attr(isHead ? 'd' : '_d', path.toString())
+        .attr(isHead ? 'd' : '_d', pathString)
         .classed('rail', true)
       ;
 
@@ -168,7 +171,7 @@ angular.module('chikatetsu', [])
 
     linePath
       .datum({
-        x1: x1, y1: y1, x2: x2, y2: y2, type: type, flipped: flipped
+        x1: x1, y1: y1, x2: x2, y2: y2, type: type, flipped: flipped, pathString: pathString
       })
     ;
 
@@ -184,7 +187,7 @@ angular.module('chikatetsu', [])
   };
 
   var evtCanvasMouseClick = function() {
-    if (ctrl.inputMode == 'edit') return;
+    if (ctrl.inputMode != 'draw') return;
 
     var pos = d3.mouse(this);
     var x2 = round(pos[0], resolution);
@@ -200,6 +203,8 @@ angular.module('chikatetsu', [])
       .attr('cy', y2)
     ;
     ctrl.shadePos = {x: x2, y: y2};
+
+    console.log(ctrl.currentMetroLine)
   };
 
   var svg = d3.select($element.find('div')[1]).append('svg')
@@ -256,6 +261,7 @@ angular.module('chikatetsu', [])
     var layerMetroLine = svg.append('g').attr('class', 'layer-group');
     var layerLinePaths = layerMetroLine.append('g');
     var layerJoints = layerMetroLine.append('g');
+    var layerStations = layerMetroLine.append('g');
     svg.node().appendChild(layerTop.node());
 
     ctrl.shadePos = {x: undefined, y: undefined};
@@ -264,6 +270,7 @@ angular.module('chikatetsu', [])
     ctrl.currentMetroLine.layers.metroLine = layerMetroLine;
     ctrl.currentMetroLine.layers.linePaths = layerLinePaths;
     ctrl.currentMetroLine.layers.joints = layerJoints;
+    ctrl.currentMetroLine.layers.stations = layerStations;
 
     ctrl.metroLines.push(ctrl.currentMetroLine);
   };
@@ -288,6 +295,19 @@ angular.module('chikatetsu', [])
     ;
     shade.
       classed('hide', false)
+    ;
+    svg.
+      classed('input-mode-select', false)
+    ;
+  };
+
+  ctrl.implement = function() {
+    ctrl.inputMode = 'implement';
+    pointer.
+      classed('hide', true)
+    ;
+    shade.
+      classed('hide', true)
     ;
     svg.
       classed('input-mode-select', false)
@@ -368,7 +388,55 @@ angular.module('chikatetsu', [])
 
   };
 
-  //ctrl.newMetroLine();
+  ctrl.addStation = function() {
+    var layerStations = ctrl.currentMetroLine.layers.stations;
+    
+    ctrl.currentStation = layerStations.append('rect')
+      .attr('rx', 6)
+      .attr('ry', 6)
+      .attr('x', round(.5 * width, resolution))
+      .attr('y', round(.5 * height, resolution))
+      .attr('width', 22)
+      .attr('height', 22)
+      .attr('transform', 'translate(-11, -11)')
+      .attr('stroke-width', 2)
+      .classed('svg-station', true)
+      .on('mousedown', function() {
+        ctrl.currentStation = d3.select(this);
+      })
+    ;
+
+    ctrl.stationPosition = 0;
+    ctrl.moveStation();
+  };
+
+  ctrl.moveStation = function() {
+    var railData = ctrl.currentMetroLine.layers.linePaths.selectAll('.rail').data();
+    railData.shift();
+    var pathString = railData.map(function(p){return p.pathString}).join(',');
+
+    var layerStations = ctrl.currentMetroLine.layers.stations;
+    var movingTrack = layerStations
+      .append('path')
+      .attr('d', pathString)
+      .attr('stroke-width', 2)
+      .attr('stroke', 'red')
+      .attr('fill', 'none')
+      .attr('display', 'none')
+    ;
+
+    var trackNode = movingTrack.node();
+    var totalLength = trackNode.getTotalLength();
+
+    var d = trackNode.getPointAtLength(ctrl.stationPosition/100*totalLength);
+
+    ctrl.currentStation
+      .attr('x', d.x)
+      .attr('y', d.y)
+    ;
+  };
+
+  ctrl.newMetroLine();
 }])
 
 
