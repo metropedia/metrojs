@@ -1,17 +1,17 @@
-angular.module('chikatetsu', [])
+angular.module('metro', [])
 
-.directive('chikatetsu', function() {
+.directive('metro', function() {
   return {
     scope: {
       topic: '='
     },
-    templateUrl: '../src/chikatetsu.html',
-    controller: 'chikatetsu',
+    templateUrl: '../src/metro.html',
+    controller: 'metro',
     controllerAs: 'ctrl',
   };
 })
 
-.controller('chikatetsu', ['$scope', '$element', function($scope, $element){
+.controller('metro', ['$scope', '$element', function($scope, $element){
 
   var ctrl = this;
       ctrl.topic = $scope.topic;
