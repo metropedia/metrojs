@@ -27,11 +27,18 @@ angular.module('metro', [])
       ctrl.schemas = {
         metroLine: {
           name: '',
+          color: '',
           layers: {
 
           },
           paths: [],
           stations: []
+        },
+        station: {
+          id: -1,
+          position: 0,
+          name: '',
+          color: ''
         }
       };
 
@@ -390,8 +397,12 @@ angular.module('metro', [])
 
   ctrl.addStation = function() {
     var layerStations = ctrl.currentMetroLine.layers.stations;
+    var station = angular.copy(ctrl.schemas.station);
+    station.id = ctrl.currentMetroLine.stations.length;
     
     ctrl.currentStation = layerStations.append('rect')
+      .datum(station)
+      .attr('station-id', station.id)
       .attr('rx', 6)
       .attr('ry', 6)
       .attr('x', round(.5 * width, resolution))
@@ -406,16 +417,19 @@ angular.module('metro', [])
       })
     ;
 
-    ctrl.stationPosition = 0;
-    ctrl.moveStation();
+    var station = ctrl.currentStation.datum();
+    ctrl.currentMetroLine.stations.push(station);
+    ctrl.moveStation(station);
   };
 
-  ctrl.moveStation = function() {
+  ctrl.moveStation = function(station) {
+    var layerStations = ctrl.currentMetroLine.layers.stations;
+    ctrl.currentStation = layerStations.select('.svg-station[station-id="'+station.id+'"]');
+
     var railData = ctrl.currentMetroLine.layers.linePaths.selectAll('.rail').data();
     railData.shift();
     var pathString = railData.map(function(p){return p.pathString}).join(',');
 
-    var layerStations = ctrl.currentMetroLine.layers.stations;
     var movingTrack = layerStations
       .append('path')
       .attr('d', pathString)
@@ -428,7 +442,7 @@ angular.module('metro', [])
     var trackNode = movingTrack.node();
     var totalLength = trackNode.getTotalLength();
 
-    var d = trackNode.getPointAtLength(ctrl.stationPosition/100*totalLength);
+    var d = trackNode.getPointAtLength(station.position/100*totalLength);
 
     ctrl.currentStation
       .attr('x', d.x)
