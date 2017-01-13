@@ -8,11 +8,11 @@
 
       <div class="btn-group btn-group-xs">
         <button class="btn btn-xs"
-                ng-class="{'btn-primary': ctrl.inputMode == 'edit'}"
-                ng-click="ctrl.editMetroLine();">Edit</button>
-        <button class="btn btn-xs"
                 ng-class="{'btn-primary': ctrl.inputMode == 'draw'}"
                 ng-click="ctrl.draw();">Draw</button>
+        <button class="btn btn-xs"
+                ng-class="{'btn-primary': ctrl.inputMode == 'edit'}"
+                ng-click="ctrl.editMetroLine();">Edit</button>
         <button class="btn btn-xs"
                 ng-class="{'btn-primary': ctrl.inputMode == 'implement'}"
                 ng-click="ctrl.implement();">Implement</button>
@@ -98,7 +98,7 @@
   </div>
 </div>
 <div>
-  
+
 </div>
 <div>
   <h1>Lines</h1> 
@@ -113,7 +113,7 @@
     </form>
     <div class="panel panel-default">
       <div class="panel-body">
-        <div ng-repeat="station in ctrl.currentMetroLine.stations track by $index">
+        <div ng-repeat="station in line.stations track by $index">
           <div class="station"></div>
           <div>name</div>
           <div>color</div>

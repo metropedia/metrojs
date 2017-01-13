@@ -1,29 +1,20 @@
 angular.module('metro', [])
 
-.directive('metro', function() {
-  return {
-    scope: {
-      topic: '='
-    },
-    templateUrl: '../src/metro.html',
-    controller: 'metro',
-    controllerAs: 'ctrl',
-  };
-})
-
-.controller('metro', ['$scope', '$element', function($scope, $element){
+.controller('metro', [
+  '$scope', '$element', '$timeout', 'metro',
+  function($scope, $element, $timeout, metro){
 
   var ctrl = this;
       ctrl.topic = $scope.topic;
       ctrl.metroLines = [];
       ctrl.isDrawing = false;
-      ctrl.currentMetroLine = null;
       ctrl.shadePos = {x: undefined, y: undefined};
       ctrl.pathType = 'straight';
       ctrl.inputMode = 'draw';
       ctrl.currentEditJoint = null;
       ctrl.currentStation = null;
       ctrl.stationPosition = 0;
+
       ctrl.schemas = {
         metroLine: {
           name: '',
@@ -44,8 +35,9 @@ angular.module('metro', [])
 
   var width = 960,
       height = 500,
-      resolution = 20,
-      r = 10;
+      resolution = 20;
+
+  var pointerR = metro.setPointerR(10);
 
   var round = function(p, n) {
     return p % n < n / 2 ? p - (p % n) : p + n - (p % n);
@@ -67,7 +59,7 @@ angular.module('metro', [])
     var jointData = joint.datum();
     var linePath = jointData.linePath;
     var linePathData = linePath.datum();
-    drawLinePath(
+    metro.drawLinePath(
       linePathData.x1, linePathData.y1,
       x2, y2,
       linePathData.type,
@@ -80,7 +72,7 @@ angular.module('metro', [])
       var nextSiblingData = nextSibling.datum();
       var nextSiblingLinePath = nextSiblingData.linePath;
       var nextSiblingLinePathData = nextSiblingLinePath.datum();
-      drawLinePath(
+      metro.drawLinePath(
         x2, y2,
         nextSiblingLinePathData.x2, nextSiblingLinePathData.y2,
         nextSiblingLinePathData.type,
@@ -96,94 +88,8 @@ angular.module('metro', [])
     }
   };
 
-  var drawLinePath = function(x1, y1, x2, y2, type, flipped, linePath, insertBefore) {
-    var layerMetroLine = ctrl.currentMetroLine.layers.metroLine;
-    var layerLinePaths = ctrl.currentMetroLine.layers.linePaths;
-    var layerJoints = ctrl.currentMetroLine.layers.joints;
+  metro.on('jointDrag', evtJointDrag);
 
-    var isHead = typeof x1 != 'undefined' && typeof x2 != 'undefined';
-    var path = d3.path();
-    path.moveTo(x1, y1);
-    if (type == 'straight') {
-      path.lineTo(x2, y2);
-    } else if (type == 'curly') {
-      if (flipped) {
-        path.quadraticCurveTo(x1, y2, x2, y2);
-      } else {
-        path.quadraticCurveTo(x2, y1, x2, y2);
-      }
-    }
-    var pathString = path.toString();
-    if (linePath) {
-      linePath
-        .attr(isHead ? 'd' : '_d', pathString)
-        .classed('rail', true)
-    } else {
-      var linePath;
-      var beforeIndex;
-      if (insertBefore) {
-        beforeIndex = layerLinePaths
-          .selectAll('.rail').data()
-          .indexOf(insertBefore.data()[0]) + 1
-        ;
-        linePath = layerLinePaths.insert('path', ':nth-child(' + beforeIndex + ')');
-      } else {
-        linePath = layerLinePaths.append('path');
-      }
-      linePath
-        .attr(isHead ? 'd' : '_d', pathString)
-        .classed('rail', true)
-      ;
-
-      var joint = layerJoints.selectAll()
-          .data([{x: x2, y: y2 }])
-          .enter()
-      ;
-      if (insertBefore && beforeIndex) {
-        joint = joint.insert('circle', ':nth-child(' + beforeIndex + ')');
-      } else {
-        joint = joint.append('circle');
-      }
-      joint
-        .attr('cx', function(d) { return d.x; })
-        .attr('cy', function(d) { return d.y; })
-        .attr('r', r)
-        .attr('class', 'joint')
-        .on('mousedown', function() {
-          if (ctrl.currentEditJoint) {
-            d3.select(ctrl.currentEditJoint.joint)
-              .classed('current', false);
-          }
-          d3.select(this).classed('current', true);
-          ctrl.currentEditJoint = {
-            linePath: linePath,
-            joint: this,
-            data: d3.select(this).datum().linePath.datum()
-          }; this;
-          $scope.$apply();
-          console.log(ctrl.currentEditJoint.data)
-        })
-        .call(
-          d3.drag()
-            .on('drag', evtJointDrag)
-            .on('end', function() {
-              d3.select(this).classed('hover', false);
-              ctrl.currentEditJoint.data = d3.select(this).datum().linePath.datum();
-              $scope.$apply();
-            })
-        )
-      ;
-      joint.datum({linePath: linePath})
-    }
-
-    linePath
-      .datum({
-        x1: x1, y1: y1, x2: x2, y2: y2, type: type, flipped: flipped, pathString: pathString
-      })
-    ;
-
-    return linePath;
-  };
 
   var evtCanvasMouseMove = function() {
     var pos = d3.mouse(this);
@@ -194,6 +100,7 @@ angular.module('metro', [])
   };
 
   var evtCanvasMouseClick = function() {
+    if (ctrl.metroLines.length === 0) return;
     if (ctrl.inputMode != 'draw') return;
 
     var pos = d3.mouse(this);
@@ -203,7 +110,7 @@ angular.module('metro', [])
     var x1 = ctrl.shadePos.x;
     var y1 = ctrl.shadePos.y;
 
-    var linePath = drawLinePath(x1, y1, x2, y2, ctrl.pathType, false);
+    var linePath = metro.drawLinePath(x1, y1, x2, y2, ctrl.pathType, false);
 
     shade
       .attr('cx', x2)
@@ -211,18 +118,64 @@ angular.module('metro', [])
     ;
     ctrl.shadePos = {x: x2, y: y2};
 
-    console.log(ctrl.currentMetroLine)
   };
 
   var svg = d3.select($element.find('div')[1]).append('svg')
     .attr('width', width)
     .attr('height', height)
     .on('mousemove', evtCanvasMouseMove)
-    .on('click', evtCanvasMouseClick)
   ;
 
   var layerGridlines = svg.append('g').attr('class', 'layer-group');
   var layerTop = svg.append('g').attr('class', 'layer-group');
+  var layerSplash = svg.append('g').attr('class', 'splash');
+
+  var evtSlpashClick = function() {
+      $timeout(function() {
+        svg.on('click', evtCanvasMouseClick);
+      }, 0);
+      ctrl.newMetroLine();
+      $scope.$apply();
+      layerSplash.remove();
+  };
+
+  layerSplash
+    .append('rect')
+    .attr('x', 0)
+    .attr('y', 0)
+    .attr('width', width)
+    .attr('height', height)
+    .attr('fill', 'black')
+    .attr('opacity', .8)
+  ;
+  layerSplash
+    .append('rect')
+    .attr('rx', 10)
+    .attr('ry', 10)
+    .attr('x', round(.5 * width, resolution))
+    .attr('y', round(.5 * height, resolution))
+    .attr('width', 150)
+    .attr('height', 46)
+    .attr('transform', 'translate(-75, -23)')
+    .attr('stroke-width', 2)
+    .attr('fill', 'white')
+    .attr('cursor', 'pointer')
+    .on('click', evtSlpashClick)
+  ;
+  layerSplash
+    .append('text')
+    .attr('x', round(.5 * width, resolution))
+    .attr('y', round(.5 * height, resolution))
+    .attr('width', 150)
+    .attr('transform', 'translate(0, 7)')
+    .attr('fill', 'black')
+    .attr('cursor', 'pointer')
+    .attr('font-size', '22px')
+    .on('click', evtSlpashClick)
+      .append('tspan')
+      .attr('text-anchor', 'middle')
+      .text('New Metro')
+  ;
 
   layerGridlines.selectAll()
     .data(d3.range(1, width / resolution))
@@ -254,7 +207,7 @@ angular.module('metro', [])
       .attr('class', 'pointer')
       .attr('cx', function(d) { return d.x; })
       .attr('cy', function(d) { return d.y; })
-      .attr('r', r);
+      .attr('r', pointerR);
 
   var shade = layerTop.selectAll()
     .data([{x: -999, y: -999 }])
@@ -262,7 +215,7 @@ angular.module('metro', [])
     .append('circle')
       .attr('cx', function(d) { return d.x; })
       .attr('cy', function(d) { return d.y; })
-      .attr('r', r);
+      .attr('r', pointerR);
 
   ctrl.newMetroLine = function() {
     var layerMetroLine = svg.append('g').attr('class', 'layer-group');
@@ -273,13 +226,15 @@ angular.module('metro', [])
 
     ctrl.shadePos = {x: undefined, y: undefined};
 
-    ctrl.currentMetroLine = angular.copy(ctrl.schemas.metroLine);
-    ctrl.currentMetroLine.layers.metroLine = layerMetroLine;
-    ctrl.currentMetroLine.layers.linePaths = layerLinePaths;
-    ctrl.currentMetroLine.layers.joints = layerJoints;
-    ctrl.currentMetroLine.layers.stations = layerStations;
+    var currentMetroLine = angular.copy(ctrl.schemas.metroLine);
+        currentMetroLine.layers.metroLine = layerMetroLine;
+        currentMetroLine.layers.linePaths = layerLinePaths;
+        currentMetroLine.layers.joints = layerJoints;
+        currentMetroLine.layers.stations = layerStations;
 
-    ctrl.metroLines.push(ctrl.currentMetroLine);
+    metro.setCurrentMetroLine(currentMetroLine);
+
+    ctrl.metroLines.push(currentMetroLine);
   };
 
   ctrl.editMetroLine = function() {
@@ -330,15 +285,16 @@ angular.module('metro', [])
   };
 
   ctrl.flipLast = function() {
-    var layerMetroLine = ctrl.currentMetroLine.layers.metroLine;
-    var layerLinePaths = ctrl.currentMetroLine.layers.linePaths;
-    var layerJoints = ctrl.currentMetroLine.layers.joints;
+    var currentMetroLine = metro.getCurrentMetroLine();
+    var layerMetroLine = currentMetroLine.layers.metroLine;
+    var layerLinePaths = currentMetroLine.layers.linePaths;
+    var layerJoints = currentMetroLine.layers.joints;
 
     var jointData = layerJoints.select('.joint:last-child').datum();
     var linePath = jointData.linePath;
     var linePathData = linePath.datum();
     linePathData.flipped = !linePathData.flipped;
-    linePathData.linePath = drawLinePath(
+    linePathData.linePath = metro.drawLinePath(
       linePathData.x1, linePathData.y1,
       linePathData.x2, linePathData.y2,
       linePathData.type,
@@ -349,7 +305,7 @@ angular.module('metro', [])
 
   ctrl.applyLinePathChange = function() {
     var linePathJoint = ctrl.currentEditJoint;
-    drawLinePath(
+    metro.drawLinePath(
       linePathJoint.data.x1, linePathJoint.data.y1,
       linePathJoint.data.x2, linePathJoint.data.y2,
       linePathJoint.data.type,
@@ -376,14 +332,14 @@ angular.module('metro', [])
       flipped: d.flipped
     };
 
-    drawLinePath(
+    metro.drawLinePath(
       left.x1, left.y1,
       left.x2, left.y2,
       left.type, left.flipped,
       null,
       linePathJoint.linePath
     );
-    drawLinePath(
+    metro.drawLinePath(
       right.x1, right.y1,
       right.x2, right.y2,
       right.type, right.flipped,
@@ -396,9 +352,10 @@ angular.module('metro', [])
   };
 
   ctrl.addStation = function() {
-    var layerStations = ctrl.currentMetroLine.layers.stations;
+    var currentMetroLine = metro.getCurrentMetroLine();
+    var layerStations = currentMetroLine.layers.stations;
     var station = angular.copy(ctrl.schemas.station);
-    station.id = ctrl.currentMetroLine.stations.length;
+    station.id = currentMetroLine.stations.length;
     
     ctrl.currentStation = layerStations.append('rect')
       .datum(station)
@@ -418,20 +375,21 @@ angular.module('metro', [])
     ;
 
     var station = ctrl.currentStation.datum();
-    ctrl.currentMetroLine.stations.push(station);
+    metro.addStationObject(station);
     ctrl.moveStation(station);
   };
 
   ctrl.moveStation = function(station) {
-    var layerStations = ctrl.currentMetroLine.layers.stations;
-    ctrl.currentStation = layerStations.select('.svg-station[station-id="'+station.id+'"]');
-
-    var railData = ctrl.currentMetroLine.layers.linePaths.selectAll('.rail').data();
+    var currentMetroLine = metro.getCurrentMetroLine();
+    var layerStations = currentMetroLine.layers.stations;
+    var currentStation = layerStations.select('.svg-station[station-id="'+station.id+'"]');
+    var railData = currentMetroLine.layers.linePaths.selectAll('.rail').data();
     railData.shift();
     var pathString = railData.map(function(p){return p.pathString}).join(',');
 
     var movingTrack = layerStations
       .append('path')
+      .attr('class', 'guide')
       .attr('d', pathString)
       .attr('stroke-width', 2)
       .attr('stroke', 'red')
@@ -441,16 +399,13 @@ angular.module('metro', [])
 
     var trackNode = movingTrack.node();
     var totalLength = trackNode.getTotalLength();
-
     var d = trackNode.getPointAtLength(station.position/100*totalLength);
 
-    ctrl.currentStation
+    currentStation
       .attr('x', d.x)
       .attr('y', d.y)
     ;
   };
-
-  ctrl.newMetroLine();
 }])
 
 
