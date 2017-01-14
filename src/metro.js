@@ -1,8 +1,18 @@
 angular.module('metro', [])
 
-.controller('metro', [
-  '$scope', '$element', '$timeout', 'metro',
-  function($scope, $element, $timeout, metro){
+.controller('metroDesigner', [
+  '$scope', '$element', '$timeout', 'Metro',
+  function($scope, $element, $timeout, Metro){
+  var metro = new Metro();
+  metro.setPointerR(10);
+  
+  var width = 960,
+      height = 500,
+      resolution = 20,
+      round = function(p, n) {
+        return p % n < n / 2 ? p - (p % n) : p + n - (p % n);
+      }
+  ;
 
   var ctrl = this;
       ctrl.topic = $scope.topic;
@@ -12,11 +22,9 @@ angular.module('metro', [])
       ctrl.pathType = 'straight';
       ctrl.inputMode = 'draw';
       ctrl.currentEditJoint = null;
-      ctrl.currentStation = null;
-      ctrl.stationPosition = 0;
-
       ctrl.schemas = {
         metroLine: {
+          id: -1,
           name: '',
           color: '',
           layers: {
@@ -33,21 +41,11 @@ angular.module('metro', [])
         }
       };
 
-  var width = 960,
-      height = 500,
-      resolution = 20;
-
-  var pointerR = metro.setPointerR(10);
-
-  var round = function(p, n) {
-    return p % n < n / 2 ? p - (p % n) : p + n - (p % n);
-  };
-
   var evtJointDrag = function(d) {
     var x2 = d3.event.x,
         y2 = d3.event.y;
     
-    x2 = round(Math.max(r, Math.min(width - r, x2)), resolution),
+    x2 = round(Math.max(r, Math.min(width - r, x2)), resolution);
     y2 = round(Math.max(r, Math.min(height - r, y2)), resolution);
   
     var joint = d3.select(this)
@@ -59,6 +57,7 @@ angular.module('metro', [])
     var jointData = joint.datum();
     var linePath = jointData.linePath;
     var linePathData = linePath.datum();
+
     metro.drawLinePath(
       linePathData.x1, linePathData.y1,
       x2, y2,
@@ -100,7 +99,7 @@ angular.module('metro', [])
   };
 
   var evtCanvasMouseClick = function() {
-    if (ctrl.metroLines.length === 0) return;
+    if (metro.getMetroLines().length === 0) return;
     if (ctrl.inputMode != 'draw') return;
 
     var pos = d3.mouse(this);
@@ -207,7 +206,7 @@ angular.module('metro', [])
       .attr('class', 'pointer')
       .attr('cx', function(d) { return d.x; })
       .attr('cy', function(d) { return d.y; })
-      .attr('r', pointerR);
+      .attr('r', metro.getPointerR());
 
   var shade = layerTop.selectAll()
     .data([{x: -999, y: -999 }])
@@ -215,7 +214,7 @@ angular.module('metro', [])
     .append('circle')
       .attr('cx', function(d) { return d.x; })
       .attr('cy', function(d) { return d.y; })
-      .attr('r', pointerR);
+      .attr('r', metro.getPointerR());
 
   ctrl.newMetroLine = function() {
     var layerMetroLine = svg.append('g').attr('class', 'layer-group');
@@ -227,6 +226,7 @@ angular.module('metro', [])
     ctrl.shadePos = {x: undefined, y: undefined};
 
     var currentMetroLine = angular.copy(ctrl.schemas.metroLine);
+        currentMetroLine.id = ctrl.metroLines.length;
         currentMetroLine.layers.metroLine = layerMetroLine;
         currentMetroLine.layers.linePaths = layerLinePaths;
         currentMetroLine.layers.joints = layerJoints;
@@ -234,7 +234,9 @@ angular.module('metro', [])
 
     metro.setCurrentMetroLine(currentMetroLine);
 
-    ctrl.metroLines.push(currentMetroLine);
+    metro.addMetroLine(currentMetroLine);
+
+    ctrl.metroLines = metro.getMetroLines();
   };
 
   ctrl.editMetroLine = function() {
@@ -352,13 +354,20 @@ angular.module('metro', [])
   };
 
   ctrl.addStation = function() {
-    var currentMetroLine = metro.getCurrentMetroLine();
-    var layerStations = currentMetroLine.layers.stations;
+    var metroLine = metro.getCurrentMetroLine();
+
+    if (metro.getPathString(metroLine) == '') {
+      throw 'Empty Metro Line';
+      return;
+    } else {
+      ctrl.implement();
+    }
+
+    var layerStations = metroLine.layers.stations;
     var station = angular.copy(ctrl.schemas.station);
-    station.id = currentMetroLine.stations.length;
+        station.id = metroLine.stations.length;
     
-    ctrl.currentStation = layerStations.append('rect')
-      .datum(station)
+    layerStations.append('rect')
       .attr('station-id', station.id)
       .attr('rx', 6)
       .attr('ry', 6)
@@ -369,39 +378,30 @@ angular.module('metro', [])
       .attr('transform', 'translate(-11, -11)')
       .attr('stroke-width', 2)
       .classed('svg-station', true)
-      .on('mousedown', function() {
-        ctrl.currentStation = d3.select(this);
-      })
     ;
 
-    var station = ctrl.currentStation.datum();
     metro.addStationObject(station);
-    ctrl.moveStation(station);
+    ctrl.moveStation(metroLine, station);
   };
 
-  ctrl.moveStation = function(station) {
-    var currentMetroLine = metro.getCurrentMetroLine();
-    var layerStations = currentMetroLine.layers.stations;
-    var currentStation = layerStations.select('.svg-station[station-id="'+station.id+'"]');
-    var railData = currentMetroLine.layers.linePaths.selectAll('.rail').data();
-    railData.shift();
-    var pathString = railData.map(function(p){return p.pathString}).join(',');
+  ctrl.moveStation = function(line, station) {
+    var metroLine = metro.getMetroLineById(line.id);
+    var pathString = metro.getPathString(metroLine);
+    var layerStations = metroLine.layers.stations;
 
-    var movingTrack = layerStations
-      .append('path')
+    var guide = layerStations.append('path')
       .attr('class', 'guide')
       .attr('d', pathString)
       .attr('stroke-width', 2)
       .attr('stroke', 'red')
       .attr('fill', 'none')
       .attr('display', 'none')
+      .node()
     ;
 
-    var trackNode = movingTrack.node();
-    var totalLength = trackNode.getTotalLength();
-    var d = trackNode.getPointAtLength(station.position/100*totalLength);
+    var d = guide.getPointAtLength(station.position/100*guide.getTotalLength());
 
-    currentStation
+    layerStations.select('.svg-station[station-id="'+station.id+'"]')
       .attr('x', d.x)
       .attr('y', d.y)
     ;

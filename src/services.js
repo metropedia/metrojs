@@ -1,30 +1,67 @@
 angular.module('metro')
 
-.service('metro', [function() {
-  var service = this;
-  var currentMetroLine = null;
-  var currentEditJoint = null;
-  var pointerR;
-  var evt = {};
+.factory('Metro', [function() {
+  function constructor() {
+    this.metroLines = [];
+    this.currentMetroLine = null;
+    this.currentEditJoint = null;
+    this.pointerR;
+    this.evt = {};
+  }
 
-  service.setCurrentMetroLine = m => { currentMetroLine = m; };
-  service.getCurrentMetroLine = () => { return currentMetroLine; };
-  service.setCurrentEditJoint = j => { currentEditJoint = j; };
-  service.setPointerR = r => { PointerR = r; return r; };
+  var metro = constructor.prototype;
 
-  service.on = (name, cb) => {
-    evt[name] = cb;
+  metro.setPointerR = function(r) {
+    this.pointerR = r;
   };
 
-  service.addStationObject = station => {
-    currentMetroLine.stations.push(station);
+  metro.getPointerR = function() {
+    return this.pointerR;
   };
 
-  service.drawLinePath = function(x1, y1, x2, y2, type, flipped, linePath, insertBefore) {
-    var layerMetroLine = currentMetroLine.layers.metroLine;
-    var layerLinePaths = currentMetroLine.layers.linePaths;
-    var layerJoints = currentMetroLine.layers.joints;
+  metro.setCurrentMetroLine = function(m) {
+    this.currentMetroLine = m;
+  };
 
+  metro.getCurrentMetroLine = function() {
+    return this.currentMetroLine;
+  };
+
+  metro.getMetroLineById = function(id) {
+    return this.metroLines.filter(line => line.id == id)[0];
+  };
+
+  metro.addMetroLine = function(metroLine) {
+    this.metroLines.push(metroLine);
+  };
+
+  metro.getMetroLines = function() {
+    return this.metroLines;
+  };
+
+  metro.setCurrentEditJoint = function(j) {
+    this.currentEditJoint = j;
+  };
+
+  metro.on = function(name, cb) {
+    this.evt[name] = cb;
+  };
+
+  metro.addStationObject = function(station) {
+    this.currentMetroLine.stations.push(station);
+  };
+
+  metro.getPathString = function(metroLine) {
+    var d = metroLine.layers.linePaths.selectAll('.rail').data();
+    d.shift();
+    return d.map(function(p){return p.pathString}).join(',');
+  };
+
+  metro.drawLinePath = function(x1, y1, x2, y2, type, flipped, linePath, insertBefore) {
+    var _this = this;
+    var layerMetroLine = this.currentMetroLine.layers.metroLine;
+    var layerLinePaths = this.currentMetroLine.layers.linePaths;
+    var layerJoints = this.currentMetroLine.layers.joints;
     var isHead = typeof x1 != 'undefined' && typeof x2 != 'undefined';
     var path = d3.path();
     path.moveTo(x1, y1);
@@ -71,28 +108,28 @@ angular.module('metro')
       joint
         .attr('cx', function(d) { return d.x; })
         .attr('cy', function(d) { return d.y; })
-        .attr('r', pointerR)
+        .attr('r', _this.pointerR)
         .attr('class', 'joint')
         .on('mousedown', function() {
-          if (currentEditJoint) {
-            d3.select(currentEditJoint.joint)
+          if (_this.currentEditJoint) {
+            d3.select(_this.currentEditJoint.joint)
               .classed('current', false);
           }
           d3.select(this).classed('current', true);
-          currentEditJoint = {
+          _this.currentEditJoint = {
             linePath: linePath,
             joint: this,
             data: d3.select(this).datum().linePath.datum()
           }; this;
           $scope.$apply();
-          console.log(currentEditJoint.data)
+          console.log(_this.currentEditJoint.data)
         })
         .call(
           d3.drag()
-            .on('drag', evt['jointDrag'])
+            .on('drag', _this.evt['jointDrag'])
             .on('end', function() {
               d3.select(this).classed('hover', false);
-              currentEditJoint.data = d3.select(this).datum().linePath.datum();
+              _this.currentEditJoint.data = d3.select(this).datum().linePath.datum();
               $scope.$apply();
             })
         )
@@ -108,5 +145,7 @@ angular.module('metro')
 
     return linePath;
   };
+
+  return constructor; 
 }])
 ;

@@ -1,12 +1,12 @@
 angular.module('metro')
 
-.directive('metro', function() {
+.directive('metroDesigner', function() {
   return {
     scope: {
       topic: '='
     },
     templateUrl: '../src/metro.html',
-    controller: 'metro',
+    controller: 'metroDesigner',
     controllerAs: 'ctrl',
   };
 })
