@@ -1,202 +1,100 @@
 angular.module('metro', [])
 
 .controller('metroDesigner', [
-  '$scope', '$element', '$timeout', 'Metro', 'metroHelper',
-  function($scope, $element, $timeout, Metro, helper){
+  '$scope', '$element', 'Metro', 'metroHelper',
+  function($scope, $element, Metro, helper){
 
   var def = {
     pointerRadius: 10,
     width: 960,
     height: 500,
     resolution: 20,
+    container: $element.find('div')[1],
+    inputMode: 'draw',
+    pathType: 'straight'
   };
 
-  var metro = new Metro(def, $scope);
+  var metro = new Metro(def);
 
   var ctrl = this;
       ctrl.topic = $scope.topic;
       ctrl.metroLines = [];
-      ctrl.shadePos = {x: undefined, y: undefined};
-      ctrl.pathType = 'straight';
-      ctrl.inputMode = 'draw';
       ctrl.currentEditJoint = null;
+      ctrl.inputMode = metro.getInputMode();
 
-  var evtJointDrag = function(d) {
-    var r = def.pointerRadius;
-    var x2 = d3.event.x,
-        y2 = d3.event.y;
-    
-    x2 = helper.round(Math.max(r, Math.min(def.width - r, x2)), def.resolution);
-    y2 = helper.round(Math.max(r, Math.min(def.height - r, y2)), def.resolution);
-  
-    var joint = d3.select(this)
-      .attr('cx', x2)
-      .attr('cy', y2)
-      .classed('hover', true)
-    ;
-
-    var jointData = joint.datum();
-    var linePath = jointData.linePath;
-    var linePathData = linePath.datum();
-
-    metro.drawLinePath(
-      linePathData.x1, linePathData.y1,
-      x2, y2,
-      linePathData.type,
-      linePathData.flipped,
-      linePath
-    );
-
-    if (d3.select(this.nextElementSibling).size() > 0) {
-      var nextSibling = d3.select(this.nextElementSibling);
-      var nextSiblingData = nextSibling.datum();
-      var nextSiblingLinePath = nextSiblingData.linePath;
-      var nextSiblingLinePathData = nextSiblingLinePath.datum();
-      metro.drawLinePath(
-        x2, y2,
-        nextSiblingLinePathData.x2, nextSiblingLinePathData.y2,
-        nextSiblingLinePathData.type,
-        nextSiblingLinePathData.flipped,
-        nextSiblingLinePath
-      );
-    } else {
-      shade
-        .attr('cx', x2)
-        .attr('cy', y2)
-      ;
-      ctrl.shadePos = {x: x2, y: y2};
-    }
-  };
-
-
-  var evtCanvasMouseMove = function() {
-    var pos = d3.mouse(this);
-    pointer
-      .attr('cx', function(d) { return helper.round(pos[0], def.resolution); })
-      .attr('cy', function(d) { return helper.round(pos[1], def.resolution); })
-    ;
-  };
-
-  var evtCanvasMouseClick = function() {
-    if (metro.getMetroLines().length === 0) return;
-    if (ctrl.inputMode != 'draw') return;
-
-    var pos = d3.mouse(this);
-    var x2 = helper.round(pos[0], def.resolution);
-    var y2 = helper.round(pos[1], def.resolution);
-
-    var x1 = ctrl.shadePos.x;
-    var y1 = ctrl.shadePos.y;
-
-    var linePath = metro.drawLinePath(x1, y1, x2, y2, ctrl.pathType, false);
-
-    shade
-      .attr('cx', x2)
-      .attr('cy', y2)
-    ;
-    ctrl.shadePos = {x: x2, y: y2};
-
-  };
-
-  var evtSlpashClick = function() {
-      $timeout(function() {
-        svg.on('click', evtCanvasMouseClick);
-      }, 0);
-      ctrl.newMetroLine();
-      $scope.$apply();
-      layerSplash.remove();
-  };
-
-  //move to service
-  var svg = helper
-        .drawCanvas(d3.select($element.find('div')[1]), def)
-        .on('mousemove', evtCanvasMouseMove);
-
-  var layerGridlines = svg.append('g').attr('class', 'layer-group');
-  var layerTop = svg.append('g').attr('class', 'layer-group');
-  var layerSplash = svg.append('g').attr('class', 'splash');
-
-  var splash = helper.drawSplashMask(layerSplash, def);
-  var splashButton = helper.drawSplashButton(layerSplash, def).on('click', evtSlpashClick);
-  var splashButtonText = helper.drawSplashButtonText(layerSplash, def).on('click', evtSlpashClick);
-  var gridlines = helper.drawGridlines(layerGridlines, def);
-  var pointer = helper.drawPointer(layerTop, def);
-  var shade = helper.drawShade(layerTop, def);
-
-  metro.on('jointDrag', evtJointDrag);
+  metro.on('jointDrag', function(shadePos) {
+    //console.log(shadePos)
+  });
 
   metro.on('jointMouseDown', function(jointData) {
     ctrl.currentEditJoint = jointData;
     $scope.$apply();
   });
 
+  metro.on('splashButtonClick', function() {
+    ctrl.newMetroLine();
+    $scope.$apply();
+  });
+
+  metro.on('canvasMouseClick', function(shadePos) {
+    //console.log(shadePos)
+  });
+  
+
   ctrl.newMetroLine = function() {
-    var layerMetroLine = svg.append('g').attr('class', 'layer-group');
-    var layerLinePaths = layerMetroLine.append('g');
-    var layerJoints = layerMetroLine.append('g');
-    var layerStations = layerMetroLine.append('g');
-    svg.node().appendChild(layerTop.node());
-
-    ctrl.shadePos = {x: undefined, y: undefined};
-
-    var metroLine = metro.newMetroLine();
-        metroLine.id = ctrl.metroLines.length;
-        metroLine.layers.metroLine = layerMetroLine;
-        metroLine.layers.linePaths = layerLinePaths;
-        metroLine.layers.joints = layerJoints;
-        metroLine.layers.stations = layerStations;
-
+    var metroLine = metro.addMetroLine();
     metro.setCurrentMetroLine(metroLine);
-    metro.addMetroLine(metroLine);
-
     ctrl.metroLines = metro.getMetroLines();
   };
 
   ctrl.editMetroLine = function() {
-    ctrl.inputMode = 'edit';
-    pointer.
+    ctrl.inputMode = metro.setInputMode('edit');
+    var el = metro.getElements();
+    el.pointer.
       classed('hide', true)
     ;
-    shade.
+    el.shade.
       classed('hide', true)
     ;
-    svg.
+    el.svg.
       classed('input-mode-select', true)
     ;
   };
 
   ctrl.draw = function() {
-    ctrl.inputMode = 'draw';
-    pointer.
+    ctrl.inputMode = metro.setInputMode('draw');
+    var el = metro.getElements();
+    el.pointer.
       classed('hide', false)
     ;
-    shade.
+    el.shade.
       classed('hide', false)
     ;
-    svg.
+    el.svg.
       classed('input-mode-select', false)
     ;
   };
 
   ctrl.implement = function() {
-    ctrl.inputMode = 'implement';
-    pointer.
+    ctrl.inputMode = metro.setInputMode('implement');
+    var el = metro.getElements();
+    el.pointer.
       classed('hide', true)
     ;
-    shade.
+    el.shade.
       classed('hide', true)
     ;
-    svg.
+    el.svg.
       classed('input-mode-select', false)
     ;
   };
 
   ctrl.useStraightPath = function() {
-    ctrl.pathType = 'straight';
+    ctrl.pathType = metro.setPathType('straight');
   };
 
   ctrl.useCurlyPath = function() {
-    ctrl.pathType = 'curly';
+    ctrl.pathType = metro.setPathType('curly');
   };
 
   ctrl.flipLast = function() {
