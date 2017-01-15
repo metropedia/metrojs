@@ -1,22 +1,72 @@
 angular.module('metro')
 
 .factory('Metro', [function() {
-  function constructor() {
+  function constructor(def) {
     this.metroLines = [];
     this.currentMetroLine = null;
     this.currentEditJoint = null;
-    this.pointerR;
-    this.evt = {};
+    this.pointerRadius = def.pointerRadius || 10;
+    this.evt = {
+      jointMouseDown: null,
+      jointDrag: null
+    };
   }
 
   var metro = constructor.prototype;
 
-  metro.setPointerR = function(r) {
-    this.pointerR = r;
+  var schemas = {
+    metroLine: {
+      id: -1,
+      name: '',
+      color: '',
+      layers: {
+
+      },
+      paths: [],
+      stations: []
+    },
+    station: {
+      id: -1,
+      position: 0,
+      name: '',
+      color: ''
+    }
   };
 
-  metro.getPointerR = function() {
-    return this.pointerR;
+  var evtJointMouseDown = function(metro) {
+    return function() {
+      var jointData = metro.getCurrentEditJoint();
+      if (jointData) {
+        d3.select(jointData.joint).classed('current', false);
+      }
+      d3.select(this).classed('current', true);
+  
+      var linePath = d3.select(this).datum().linePath;
+      var data = linePath.datum();
+      var jointData = {
+        linePath: linePath,
+        joint: this,
+        data: data
+      };
+
+      metro.setCurrentEditJoint(jointData);
+      metro.notify('jointMouseDown', this, jointData);
+    };
+  };
+
+  var evtJointDragEnd = function(metro) {
+    return function() {
+      d3.select(this).classed('hover', false);
+      metro.currentEditJoint.data = d3.select(this).datum().linePath.datum();
+    };
+  };
+
+  metro.setPointerRadius = function(r) {
+    this.pointerRadius = r;
+  };
+
+  metro.getPointerRadius = function() {
+    return this.pointerRadius;
   };
 
   metro.setCurrentMetroLine = function(m) {
@@ -43,8 +93,19 @@ angular.module('metro')
     this.currentEditJoint = j;
   };
 
+  metro.getCurrentEditJoint = function() {
+    return this.currentEditJoint;
+  };
+
   metro.on = function(name, cb) {
+    if (!this.evt.hasOwnProperty(name)) throw 'Event is not supported';
     this.evt[name] = cb;
+  };
+
+  metro.notify = function(name, context) {
+    var args = Array.from(arguments)
+    args.splice(0, 2);
+    this.evt[name].apply(context, args);
   };
 
   metro.addStationObject = function(station) {
@@ -57,8 +118,16 @@ angular.module('metro')
     return d.map(function(p){return p.pathString}).join(',');
   };
 
+  metro.newMetroLine = function() {
+    return angular.copy(schemas.metroLine);
+  };
+
+  metro.newStation = function() {
+    return angular.copy(schemas.station);
+  };
+
   metro.drawLinePath = function(x1, y1, x2, y2, type, flipped, linePath, insertBefore) {
-    var _this = this;
+    var metro = this;
     var layerMetroLine = this.currentMetroLine.layers.metroLine;
     var layerLinePaths = this.currentMetroLine.layers.linePaths;
     var layerJoints = this.currentMetroLine.layers.joints;
@@ -108,30 +177,13 @@ angular.module('metro')
       joint
         .attr('cx', function(d) { return d.x; })
         .attr('cy', function(d) { return d.y; })
-        .attr('r', _this.pointerR)
+        .attr('r', metro.pointerRadius)
         .attr('class', 'joint')
-        .on('mousedown', function() {
-          if (_this.currentEditJoint) {
-            d3.select(_this.currentEditJoint.joint)
-              .classed('current', false);
-          }
-          d3.select(this).classed('current', true);
-          _this.currentEditJoint = {
-            linePath: linePath,
-            joint: this,
-            data: d3.select(this).datum().linePath.datum()
-          }; this;
-          $scope.$apply();
-          console.log(_this.currentEditJoint.data)
-        })
+        .on('mousedown', evtJointMouseDown(metro))
         .call(
           d3.drag()
-            .on('drag', _this.evt['jointDrag'])
-            .on('end', function() {
-              d3.select(this).classed('hover', false);
-              _this.currentEditJoint.data = d3.select(this).datum().linePath.datum();
-              $scope.$apply();
-            })
+            .on('drag', metro.evt.jointDrag)
+            .on('end', evtJointDragEnd(metro))
         )
       ;
       joint.datum({linePath: linePath})

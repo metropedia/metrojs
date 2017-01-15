@@ -1,52 +1,33 @@
 angular.module('metro', [])
 
 .controller('metroDesigner', [
-  '$scope', '$element', '$timeout', 'Metro',
-  function($scope, $element, $timeout, Metro){
-  var metro = new Metro();
-  metro.setPointerR(10);
-  
-  var width = 960,
-      height = 500,
-      resolution = 20,
-      round = function(p, n) {
-        return p % n < n / 2 ? p - (p % n) : p + n - (p % n);
-      }
-  ;
+  '$scope', '$element', '$timeout', 'Metro', 'metroHelper',
+  function($scope, $element, $timeout, Metro, helper){
+
+  var def = {
+    pointerRadius: 10,
+    width: 960,
+    height: 500,
+    resolution: 20,
+  };
+
+  var metro = new Metro(def, $scope);
 
   var ctrl = this;
       ctrl.topic = $scope.topic;
       ctrl.metroLines = [];
-      ctrl.isDrawing = false;
       ctrl.shadePos = {x: undefined, y: undefined};
       ctrl.pathType = 'straight';
       ctrl.inputMode = 'draw';
       ctrl.currentEditJoint = null;
-      ctrl.schemas = {
-        metroLine: {
-          id: -1,
-          name: '',
-          color: '',
-          layers: {
-
-          },
-          paths: [],
-          stations: []
-        },
-        station: {
-          id: -1,
-          position: 0,
-          name: '',
-          color: ''
-        }
-      };
 
   var evtJointDrag = function(d) {
+    var r = def.pointerRadius;
     var x2 = d3.event.x,
         y2 = d3.event.y;
     
-    x2 = round(Math.max(r, Math.min(width - r, x2)), resolution);
-    y2 = round(Math.max(r, Math.min(height - r, y2)), resolution);
+    x2 = helper.round(Math.max(r, Math.min(def.width - r, x2)), def.resolution);
+    y2 = helper.round(Math.max(r, Math.min(def.height - r, y2)), def.resolution);
   
     var joint = d3.select(this)
       .attr('cx', x2)
@@ -87,14 +68,12 @@ angular.module('metro', [])
     }
   };
 
-  metro.on('jointDrag', evtJointDrag);
-
 
   var evtCanvasMouseMove = function() {
     var pos = d3.mouse(this);
     pointer
-      .attr('cx', function(d) { return round(pos[0], resolution); })
-      .attr('cy', function(d) { return round(pos[1], resolution); })
+      .attr('cx', function(d) { return helper.round(pos[0], def.resolution); })
+      .attr('cy', function(d) { return helper.round(pos[1], def.resolution); })
     ;
   };
 
@@ -103,8 +82,8 @@ angular.module('metro', [])
     if (ctrl.inputMode != 'draw') return;
 
     var pos = d3.mouse(this);
-    var x2 = round(pos[0], resolution);
-    var y2 = round(pos[1], resolution);
+    var x2 = helper.round(pos[0], def.resolution);
+    var y2 = helper.round(pos[1], def.resolution);
 
     var x1 = ctrl.shadePos.x;
     var y1 = ctrl.shadePos.y;
@@ -119,16 +98,6 @@ angular.module('metro', [])
 
   };
 
-  var svg = d3.select($element.find('div')[1]).append('svg')
-    .attr('width', width)
-    .attr('height', height)
-    .on('mousemove', evtCanvasMouseMove)
-  ;
-
-  var layerGridlines = svg.append('g').attr('class', 'layer-group');
-  var layerTop = svg.append('g').attr('class', 'layer-group');
-  var layerSplash = svg.append('g').attr('class', 'splash');
-
   var evtSlpashClick = function() {
       $timeout(function() {
         svg.on('click', evtCanvasMouseClick);
@@ -138,83 +107,28 @@ angular.module('metro', [])
       layerSplash.remove();
   };
 
-  layerSplash
-    .append('rect')
-    .attr('x', 0)
-    .attr('y', 0)
-    .attr('width', width)
-    .attr('height', height)
-    .attr('fill', 'black')
-    .attr('opacity', .8)
-  ;
-  layerSplash
-    .append('rect')
-    .attr('rx', 10)
-    .attr('ry', 10)
-    .attr('x', round(.5 * width, resolution))
-    .attr('y', round(.5 * height, resolution))
-    .attr('width', 150)
-    .attr('height', 46)
-    .attr('transform', 'translate(-75, -23)')
-    .attr('stroke-width', 2)
-    .attr('fill', 'white')
-    .attr('cursor', 'pointer')
-    .on('click', evtSlpashClick)
-  ;
-  layerSplash
-    .append('text')
-    .attr('x', round(.5 * width, resolution))
-    .attr('y', round(.5 * height, resolution))
-    .attr('width', 150)
-    .attr('transform', 'translate(0, 7)')
-    .attr('fill', 'black')
-    .attr('cursor', 'pointer')
-    .attr('font-size', '22px')
-    .on('click', evtSlpashClick)
-      .append('tspan')
-      .attr('text-anchor', 'middle')
-      .text('New Metro')
-  ;
+  //move to service
+  var svg = helper
+        .drawCanvas(d3.select($element.find('div')[1]), def)
+        .on('mousemove', evtCanvasMouseMove);
 
-  layerGridlines.selectAll()
-    .data(d3.range(1, width / resolution))
-    .enter()
-    .append('line')
-      .attr('class', 'vertical')
-      .attr('x1', function(d) { return d * resolution; })
-      .attr('y1', 0)
-      .attr('x2', function(d) { return d * resolution; })
-      .attr('y2', height);
-  
-  layerGridlines.selectAll()
-    .data(d3.range(1, height / resolution))
-    .enter()
-    .append('line')
-      .attr('class', 'horizontal')
-      .attr('x1', 0)
-      .attr('y1', function(d) { return d * resolution; })
-      .attr('x2', width)
-      .attr('y2', function(d) { return d * resolution; });
+  var layerGridlines = svg.append('g').attr('class', 'layer-group');
+  var layerTop = svg.append('g').attr('class', 'layer-group');
+  var layerSplash = svg.append('g').attr('class', 'splash');
 
-  var pointer = layerTop.selectAll()
-    .data([{
-      x: round(.5 * width, resolution),
-      y: round(.5 * height, resolution)
-    }])
-    .enter()
-    .append('circle')
-      .attr('class', 'pointer')
-      .attr('cx', function(d) { return d.x; })
-      .attr('cy', function(d) { return d.y; })
-      .attr('r', metro.getPointerR());
+  var splash = helper.drawSplashMask(layerSplash, def);
+  var splashButton = helper.drawSplashButton(layerSplash, def).on('click', evtSlpashClick);
+  var splashButtonText = helper.drawSplashButtonText(layerSplash, def).on('click', evtSlpashClick);
+  var gridlines = helper.drawGridlines(layerGridlines, def);
+  var pointer = helper.drawPointer(layerTop, def);
+  var shade = helper.drawShade(layerTop, def);
 
-  var shade = layerTop.selectAll()
-    .data([{x: -999, y: -999 }])
-    .enter()
-    .append('circle')
-      .attr('cx', function(d) { return d.x; })
-      .attr('cy', function(d) { return d.y; })
-      .attr('r', metro.getPointerR());
+  metro.on('jointDrag', evtJointDrag);
+
+  metro.on('jointMouseDown', function(jointData) {
+    ctrl.currentEditJoint = jointData;
+    $scope.$apply();
+  });
 
   ctrl.newMetroLine = function() {
     var layerMetroLine = svg.append('g').attr('class', 'layer-group');
@@ -225,16 +139,15 @@ angular.module('metro', [])
 
     ctrl.shadePos = {x: undefined, y: undefined};
 
-    var currentMetroLine = angular.copy(ctrl.schemas.metroLine);
-        currentMetroLine.id = ctrl.metroLines.length;
-        currentMetroLine.layers.metroLine = layerMetroLine;
-        currentMetroLine.layers.linePaths = layerLinePaths;
-        currentMetroLine.layers.joints = layerJoints;
-        currentMetroLine.layers.stations = layerStations;
+    var metroLine = metro.newMetroLine();
+        metroLine.id = ctrl.metroLines.length;
+        metroLine.layers.metroLine = layerMetroLine;
+        metroLine.layers.linePaths = layerLinePaths;
+        metroLine.layers.joints = layerJoints;
+        metroLine.layers.stations = layerStations;
 
-    metro.setCurrentMetroLine(currentMetroLine);
-
-    metro.addMetroLine(currentMetroLine);
+    metro.setCurrentMetroLine(metroLine);
+    metro.addMetroLine(metroLine);
 
     ctrl.metroLines = metro.getMetroLines();
   };
@@ -287,10 +200,10 @@ angular.module('metro', [])
   };
 
   ctrl.flipLast = function() {
-    var currentMetroLine = metro.getCurrentMetroLine();
-    var layerMetroLine = currentMetroLine.layers.metroLine;
-    var layerLinePaths = currentMetroLine.layers.linePaths;
-    var layerJoints = currentMetroLine.layers.joints;
+    var metroLine = metro.getCurrentMetroLine();
+    var layerMetroLine = metroLine.layers.metroLine;
+    var layerLinePaths = metroLine.layers.linePaths;
+    var layerJoints = metroLine.layers.joints;
 
     var jointData = layerJoints.select('.joint:last-child').datum();
     var linePath = jointData.linePath;
@@ -306,7 +219,7 @@ angular.module('metro', [])
   };
 
   ctrl.applyLinePathChange = function() {
-    var linePathJoint = ctrl.currentEditJoint;
+    var linePathJoint = metro.getCurrentEditJoint();
     metro.drawLinePath(
       linePathJoint.data.x1, linePathJoint.data.y1,
       linePathJoint.data.x2, linePathJoint.data.y2,
@@ -317,7 +230,7 @@ angular.module('metro', [])
   };
 
   ctrl.splitLinePath = function() {
-    var linePathJoint = ctrl.currentEditJoint;
+    var linePathJoint = metro.getCurrentEditJoint();
     var d = linePathJoint.data;
     var dx = (d.x2 - d.x1)/2;
     var dy = (d.y2 - d.y1)/2;
@@ -350,7 +263,6 @@ angular.module('metro', [])
     );
     linePathJoint.joint.remove();
     linePathJoint.linePath.remove();
-
   };
 
   ctrl.addStation = function() {
@@ -364,21 +276,10 @@ angular.module('metro', [])
     }
 
     var layerStations = metroLine.layers.stations;
-    var station = angular.copy(ctrl.schemas.station);
+    var station = metro.newStation();
         station.id = metroLine.stations.length;
     
-    layerStations.append('rect')
-      .attr('station-id', station.id)
-      .attr('rx', 6)
-      .attr('ry', 6)
-      .attr('x', round(.5 * width, resolution))
-      .attr('y', round(.5 * height, resolution))
-      .attr('width', 22)
-      .attr('height', 22)
-      .attr('transform', 'translate(-11, -11)')
-      .attr('stroke-width', 2)
-      .classed('svg-station', true)
-    ;
+    helper.drawStation(layerStations, station, def);
 
     metro.addStationObject(station);
     ctrl.moveStation(metroLine, station);
@@ -388,19 +289,14 @@ angular.module('metro', [])
     var metroLine = metro.getMetroLineById(line.id);
     var pathString = metro.getPathString(metroLine);
     var layerStations = metroLine.layers.stations;
+    var guide = layerStations.select('.guide');
+    if (guide.size() === 0) {
+      guide = layerStations.append('path').attr('class', 'guide');
+    }
 
-    var guide = layerStations.append('path')
-      .attr('class', 'guide')
-      .attr('d', pathString)
-      .attr('stroke-width', 2)
-      .attr('stroke', 'red')
-      .attr('fill', 'none')
-      .attr('display', 'none')
-      .node()
-    ;
+    guide = helper.drawGuide(guide, pathString).node();
 
     var d = guide.getPointAtLength(station.position/100*guide.getTotalLength());
-
     layerStations.select('.svg-station[station-id="'+station.id+'"]')
       .attr('x', d.x)
       .attr('y', d.y)
