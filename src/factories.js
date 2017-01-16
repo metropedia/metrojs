@@ -69,6 +69,13 @@ angular.module('metro')
     return function() {
       d3.select(this).classed('hover', false);
       metro.currentEditJoint.data = d3.select(this).datum().linePath.datum();
+
+      var layerJoints = metro.currentMetroLine.layers.joints;
+      var jointData = layerJoints.select('.joint:last-child').datum();
+      var linePath = jointData.linePath;
+      var linePathData = linePath.datum();
+
+      metro.setShadePos({x: linePathData.x2, y: linePathData.y2});
     };
   };
 
@@ -149,7 +156,7 @@ angular.module('metro')
         .attr('cy', y2)
       ;
 
-      var shadePos = metro.setShadePos({x: x2, y: y2});
+      shadePos = metro.setShadePos({x: x2, y: y2});
       metro.notify('canvasMouseClick', this, shadePos);
     };
   };
