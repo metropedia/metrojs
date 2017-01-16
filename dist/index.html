@@ -65,9 +65,37 @@
       fill: white;
     }
 
-    .station {
+    .metroline-editor {
+      position: fixed;
+      right: 0;
+      top: 0;
+    }
+
+    .metroline, .station {
+      height: 30px;
+    }
+
+    .metroline>div,
+    .metroline>input,
+    .metroline>label,
+    .station>div,
+    .station>input,
+    .station>label {
+      display: inline-block;
+    }
+
+    .metroline-icon {
       border: 2px solid #000;
-      border-radius: 8px;
+      border-radius: 2px;
+      width: 16px;
+      height: 10px;
+      background: #000;
+      margin: 0 10px;
+    }
+
+    .station-icon {
+      border: 2px solid #000;
+      border-radius: 5px;
       width: 16px;
       height: 16px;
       background: #fff;
@@ -75,7 +103,8 @@
     }
 
     .control-panel {
-      padding: 5px;
+      padding: 0 5px;
+      height: 27px;
     }
 
     .control-panel input[type=number] {

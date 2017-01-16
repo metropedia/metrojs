@@ -184,6 +184,7 @@ angular.module('metro', [])
   };
 
   ctrl.moveStation = function(line, station) {
+    station.position = parseFloat(station.position);
     var metroLine = metro.getMetroLineById(line.id);
     var pathString = metro.getPathString(metroLine);
     var layerStations = metroLine.layers.stations;

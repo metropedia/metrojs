@@ -3,7 +3,7 @@
     <div class="control-panel">
       <button class="btn btn-xs"
               ng-disabled="0"
-              ng-click="ctrl.newMetroLine();">New Metro</button>
+              ng-click="ctrl.newMetroLine();">New Metro Line</button>
 
       <div class="btn-group btn-group-xs">
         <button class="btn btn-xs"
@@ -12,10 +12,14 @@
         <button class="btn btn-xs"
                 ng-class="{'btn-primary': ctrl.inputMode == 'edit'}"
                 ng-click="ctrl.editMetroLine();">Refine</button>
+        <button class="btn btn-xs"
+                ng-class="{'btn-primary': ctrl.inputMode == 'implement'}"
+                ng-click="ctrl.implement();">Implement</button>
       </div>
-      <button class="btn btn-xs"
-              ng-disabled="0"
-              ng-click="ctrl.addStation()">Add Station</button>
+
+      <button class="btn btn-xs">Save</button>
+
+      <button class="btn btn-xs">Export</button>
     </div>
     <div class="control-panel ng-hide"
          ng-show="ctrl.inputMode == 'draw'">
@@ -86,37 +90,41 @@
                 ng-disabled="0"
                 ng-click="ctrl.splitLinePath();">Split</button>
     </div>
+    <div class="control-panel ng-hide"
+         ng-show="ctrl.inputMode == 'implement'">
+      <button class="btn btn-xs"
+              ng-disabled="0"
+              ng-click="ctrl.addStation()">Add Station</button>
+    </div>
   </div>
 </div>
 <div>
 
 </div>
-<div>
-  <h1>Lines</h1> 
-  <div ng-repeat="line in ctrl.metroLines track by $index">
-    <form class="form-inline">
-      <div class="input-group-sm">
-        <label>Id {{line.id}}</label>
-        <label>Name</label>
-        <input type="text" class="form-control" placeholder="Yamanote Line">
-        <label>Color</label>
+<div class="metroline-editor">
+  <h1>Metro Lines</h1> 
+  <div ng-repeat="line in ctrl.metroLines track by $index"
+       metroline-id="{{line.id}}">
+    <div class="metroline">
+      <div class="metroline-icon"></div>
+      <input type="text" placeholder="Line Name">
+      <input type="color">
+    </div>
+    <div>
+      <div ng-repeat="station in line.stations track by $index"
+           station-id="{{station.id}}" class="station">
+        <div class="station-icon"></div>
+        <input type="text" placeholder="Station Name">
         <input type="color">
-        rgba
-      </div>
-    </form>
-    <div class="panel panel-default">
-      <div class="panel-body">
-        <div ng-repeat="station in line.stations track by $index">
-          <div class="station"></div>
-          <div>Id {{station.id}}</div>
-          <div>Name</div>
-          <div>Color</div>
-          Position
-            <input type="range" step="0.1" min="0" max="100"
-                   style="width: 200px;"
-                   ng-model="station.position"
-                   ng-change="ctrl.moveStation(line, station)">%
-        </div>
+        <input type="range" step="0.1" min="0" max="100"
+               style="width: 100px;"
+               ng-model="station.position"
+               ng-change="ctrl.moveStation(line, station)">
+        <input type="number" step="0.1" min="0" max="100"
+               style="width: 50px;"
+               ng-model="station.position"
+               ng-change="ctrl.moveStation(line, station)">
+        <label>%</label>
       </div>
     </div>
   </div>
