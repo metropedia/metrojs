@@ -63,6 +63,7 @@ angular.module('metro')
         .attr('y1', 0)
         .attr('x2', function(d) { return d * def.resolution; })
         .attr('y2', def.height)
+        .attr('vector-effect', 'non-scaling-stroke')
     ;
     
     container.selectAll()
@@ -74,6 +75,7 @@ angular.module('metro')
         .attr('y1', function(d) { return d * def.resolution; })
         .attr('x2', def.width)
         .attr('y2', function(d) { return d * def.resolution; })
+        .attr('vector-effect', 'non-scaling-stroke')
     ;
   };
 

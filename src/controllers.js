@@ -39,7 +39,18 @@ angular.module('metro', [])
   metro.on('canvasMouseClick', function(shadePos) {
     //console.log(shadePos)
   });
-  
+
+  ctrl.zoomIn = function() {
+    metro.getElements().svg.transition().call(
+      metro.getZoom().scaleBy, 1.5
+    );
+  }; 
+
+  ctrl.zoomOut = function() {
+    metro.getElements().svg.transition().call(
+      metro.getZoom().scaleBy, 0.75
+    );
+  }; 
 
   ctrl.newMetroLine = function() {
     var metroLine = metro.addMetroLine();

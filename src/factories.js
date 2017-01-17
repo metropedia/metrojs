@@ -5,22 +5,26 @@ angular.module('metro')
     this.width = def.width;
     this.height = def.height;
     this.resolution = def.resolution;
+    this.pointerRadius = def.pointerRadius || 10;
+    this.container = def.container;
+    this.inputMode = def.inputMode || 'draw';
+    this.pathType = def.pathType || 'straight';
+
     this.metroLines = [];
     this.currentMetroLine = null;
     this.currentEditJoint = null;
-    this.pointerRadius = def.pointerRadius || 10;
-    this.container = def.container;
     this.elements = null;
-    this.inputMode = def.inputMode || 'draw';
     this.shadePos = null;
-    this.pathType = def.pathType || 'straight';
+    this.shadePosDelta = {x: 0, y: 0, k: 1};
+    this.zoom = d3.zoom().scaleExtent([1, 10]);
+
     this.evt = {
       jointMouseDown: null,
       jointDrag: null,
       splashButtonClick: null,
       canvasMouseClick: null
     };
-    this.render();
+    this.run();
   }
 
   var metro = constructor.prototype;
@@ -75,7 +79,16 @@ angular.module('metro')
       var linePath = jointData.linePath;
       var linePathData = linePath.datum();
 
-      metro.setShadePos({x: linePathData.x2, y: linePathData.y2});
+      var delta = metro.getShadePosDelta();
+      var x = linePathData.x2;
+      var y = linePathData.y2;
+
+      metro.elements.shade
+        .attr('cx', x * delta.k + delta.x)
+        .attr('cy', y * delta.k + delta.y)
+      ;
+
+      metro.setShadePos({x: x, y: y});
     };
   };
 
@@ -129,10 +142,11 @@ angular.module('metro')
 
   var evtCanvasMouseMove = function(metro) {
     return function() {
+      var delta = metro.getShadePosDelta();
       var pos = d3.mouse(this);
       metro.elements.pointer
-        .attr('cx', function(d) { return helper.round(pos[0], metro.resolution); })
-        .attr('cy', function(d) { return helper.round(pos[1], metro.resolution); })
+        .attr('cx', function(d) { return helper.round(pos[0], metro.resolution * delta.k); })
+        .attr('cy', function(d) { return helper.round(pos[1], metro.resolution * delta.k); })
       ;
     };
   };
@@ -142,20 +156,25 @@ angular.module('metro')
       if (metro.getMetroLines().length === 0) return;
       if (metro.inputMode != 'draw') return;
   
+      var delta = metro.getShadePosDelta();
       var pos = d3.mouse(this);
-      var x2 = helper.round(pos[0], metro.resolution);
-      var y2 = helper.round(pos[1], metro.resolution);
       var shadePos = metro.getShadePos();
       var x1 = shadePos.x;
       var y1 = shadePos.y;
-  
-      var linePath = metro.drawLinePath(x1, y1, x2, y2, metro.getPathType(), false);
-  
+      
+      var x2 = helper.round(pos[0], metro.resolution * delta.k);
+      var y2 = helper.round(pos[1], metro.resolution * delta.k);
+
       metro.elements.shade
         .attr('cx', x2)
         .attr('cy', y2)
       ;
 
+      x2 = (x2 - delta.x)/delta.k;
+      y2 = (y2 - delta.y)/delta.k;
+
+      var linePath = metro.drawLinePath(x1, y1, x2, y2, metro.getPathType(), false);
+      
       shadePos = metro.setShadePos({x: x2, y: y2});
       metro.notify('canvasMouseClick', this, shadePos);
     };
@@ -171,12 +190,34 @@ angular.module('metro')
     };
   };
 
-  metro.render = function(container) {
+  var evtCanvasZoom = function(metro) {
+    return function() {
+      var t = d3.event.transform;
+      var k = t.k;
+      var x = helper.round(t.x, metro.resolution * k);
+      var y = helper.round(t.y, metro.resolution * k);
+
+      metro.elements.layerZoomable
+        .attr("transform",
+          "translate(" + x + "," + y + ")scale(" + k + ")");
+
+      var shadePos = {x: metro.shadePos.x + x, y: metro.shadePos.y + y};
+      metro.elements.shade
+        .attr('cx', metro.shadePos.x * k + x)
+        .attr('cy', metro.shadePos.y * k + y)
+      ;
+      metro.setShadePosDelta({x: x, y: y, k: k});
+    };
+  };
+
+  metro.run = function(container) {
     var def = this;
     var svg = helper.drawCanvas(d3.select(this.container), def)
-                    .on('mousemove', evtCanvasMouseMove(def));
-
-    var layerGridlines = svg.append('g').attr('class', 'layer-group');
+      .on('mousemove', evtCanvasMouseMove(def))
+      .call(def.getZoom().on("zoom", evtCanvasZoom(def)))
+    ;
+    var layerZoomable = svg.append('g').attr('class', 'zoomable');
+    var layerGridlines = layerZoomable.append('g').attr('class', 'layer-group');
     var layerTop = svg.append('g').attr('class', 'layer-group');
     var layerSplash = svg.append('g').attr('class', 'splash');
 
@@ -191,6 +232,7 @@ angular.module('metro')
 
     this.elements = {
       svg: svg,
+      layerZoomable: layerZoomable,
       layerGridlines: layerGridlines,
       layerTop: layerTop,
       layerSplash: layerSplash,
@@ -201,12 +243,25 @@ angular.module('metro')
     return this.elements;
   };
 
+  metro.getZoom = function() {
+    return this.zoom;
+  };
+
   metro.getElements = function() {
     return this.elements;
   };
 
   metro.resetShadePos = function() {
     this.shadePos = {x: undefined, y: undefined};
+  };
+
+  metro.setShadePosDelta = function(pos) {
+    this.shadePosDelta = pos;
+    return pos;
+  };
+
+  metro.getShadePosDelta = function(pos) {
+    return this.shadePosDelta;
   };
 
   metro.setShadePos = function(pos) {
@@ -257,7 +312,7 @@ angular.module('metro')
   };
 
   metro.addMetroLine = function() {
-    var layerMetroLine = this.elements.svg.append('g').attr('class', 'layer-group');
+    var layerMetroLine = this.elements.layerZoomable.append('g').attr('class', 'layer-group');
     var layerLinePaths = layerMetroLine.append('g');
     var layerJoints = layerMetroLine.append('g');
     var layerStations = layerMetroLine.append('g');
