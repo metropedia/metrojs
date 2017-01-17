@@ -20,6 +20,15 @@
       <button class="btn btn-xs">Save</button>
 
       <button class="btn btn-xs">Export</button>
+
+      <button class="btn btn-xs"
+              ng-click="ctrl.zoomIn()">Zoom In +</button>
+
+      <button class="btn btn-xs"
+              ng-click="ctrl.zoomOut()">Zoom Out -</button>
+
+      <button class="btn btn-xs"
+              ng-click="ctrl.center()">Center</button>
     </div>
     <div class="control-panel ng-hide"
          ng-show="ctrl.inputMode == 'draw'">
