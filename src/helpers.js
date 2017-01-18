@@ -7,8 +7,6 @@ angular.module('metro')
   helper.drawGuide = (container, pathString) => {
     return container
       .attr('d', pathString)
-      .attr('fill', 'none')
-      .attr('display', 'none')
     ;
   };
 

@@ -9,7 +9,8 @@
 
     <script src="../src/controllers.js"></script>
     <script src="../src/directives.js"></script>
-    <script src="../src/factories.js"></script>
+    <script src="../src/factories/metro.js"></script>
+    <script src="../src/factories/bounds.js"></script>
     <script src="../src/helpers.js"></script>
 
     <style>
@@ -19,7 +20,9 @@
       /*cursor: none;*/
     }
 
-    svg.input-mode-select .joint {
+    svg.input-mode-select .joint,
+    svg.input-mode-select .guide,
+    svg.input-mode-select .bb-line {
       display: inherit;
     }
 
@@ -37,11 +40,26 @@
     .joint.current {
       stroke: red;
     }
+
+    .guide {
+      stroke: red;
+      stroke-width: 10px;
+      opacity: 0.5;
+      fill: none;
+      display: none;
+    }
     
     circle {
       fill: rgba(0, 0, 0, .2);
     }
 
+    .bb-line {
+      fill: #fff;
+      stroke: #000;
+      stroke-width: 1px;
+      shape-rendering: crispEdges;
+      display: none;
+    }
     line {
       stroke: rgb(212, 212, 212);
       stroke-width: 1px;
