@@ -21,6 +21,7 @@ angular.module('metro', [])
       ctrl.metroLines = [];
       ctrl.currentEditJoint = null;
       ctrl.inputMode = metro.getInputMode();
+      ctrl.pathType = metro.getPathType();
 
   metro.on('jointDrag', function(shadePos) {
     //console.log(shadePos)
@@ -156,6 +157,9 @@ angular.module('metro', [])
       flipped: d.flipped
     };
 
+    linePathJoint.joint.remove();
+    linePathJoint.linePath.remove();
+
     metro.drawLinePath(
       left.x1, left.y1,
       left.x2, left.y2,
@@ -170,8 +174,6 @@ angular.module('metro', [])
       null,
       linePathJoint.linePath
     );
-    linePathJoint.joint.remove();
-    linePathJoint.linePath.remove();
   };
 
   ctrl.addStation = function() {
@@ -197,14 +199,8 @@ angular.module('metro', [])
   ctrl.moveStation = function(line, station) {
     station.position = parseFloat(station.position);
     var metroLine = metro.getMetroLineById(line.id);
-    var pathString = metro.getPathString(metroLine);
     var layerStations = metroLine.layers.stations;
-    var guide = layerStations.select('.guide');
-    if (guide.size() === 0) {
-      guide = layerStations.append('path').attr('class', 'guide');
-    }
-
-    guide = helper.drawGuide(guide, pathString).node();
+    var guide = metroLine.guide.node();
 
     var d = guide.getPointAtLength(station.position/100*guide.getTotalLength());
     layerStations.select('.svg-station[station-id="'+station.id+'"]')

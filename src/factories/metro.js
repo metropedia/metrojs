@@ -1,6 +1,6 @@
 angular.module('metro')
 
-.factory('Metro', ['$timeout', 'metroHelper', function($timeout, helper) {
+.factory('Metro', ['$timeout', 'metroHelper', 'Bounds', function($timeout, helper, Bounds) {
   function constructor(def) {
     this.width = def.width;
     this.height = def.height;
@@ -33,12 +33,15 @@ angular.module('metro')
     metroLine: {
       id: -1,
       name: '',
-      color: '',
       layers: {
 
       },
       paths: [],
-      stations: []
+      stations: [],
+      style: {
+        color: '',
+        rotation: 0
+      }
     },
     station: {
       id: -1,
@@ -207,6 +210,8 @@ angular.module('metro')
         .attr('cy', metro.shadePos.y * k + y)
       ;
       metro.setShadePosDelta({x: x, y: y, k: k});
+
+      //
     };
   };
 
@@ -241,6 +246,24 @@ angular.module('metro')
     };
 
     return this.elements;
+  };
+
+  metro.editableBounds = function() {
+    var metroLine = this.getCurrentMetroLine();
+    var pathString = this.getPathString(metroLine);
+    var guide = helper.drawGuide(metroLine.guide, pathString);
+
+    var d = guide.datum() || {};
+    var bounds;
+    if (!d.bounds) {
+      bounds = new Bounds({
+        selection: guide,
+        container: metroLine.layers.stations
+      });
+    } else {
+      bounds = guide.datum().bounds;
+    }
+    bounds.display();
   };
 
   metro.getZoom = function() {
@@ -314,9 +337,11 @@ angular.module('metro')
   metro.addMetroLine = function() {
     var layerMetroLine = this.elements.layerZoomable.append('g').attr('class', 'layer-group');
     var layerLinePaths = layerMetroLine.append('g');
+    var layerGuide = layerMetroLine.append('g');
     var layerJoints = layerMetroLine.append('g');
     var layerStations = layerMetroLine.append('g');
     var metroLine = angular.copy(schemas.metroLine);
+    var guide = layerGuide.append('path').attr('class', 'guide');
 
     angular.extend(metroLine, {
       id: this.metroLines.length,
@@ -324,8 +349,9 @@ angular.module('metro')
         metroLine: layerMetroLine,
         linePaths: layerLinePaths,
         joints: layerJoints,
-        stations: layerStations
-      }
+        stations: layerStations,
+      },
+      guide: guide
     });
 
     this.resetShadePos();
@@ -383,9 +409,10 @@ angular.module('metro')
 
   metro.drawLinePath = function(x1, y1, x2, y2, type, flipped, linePath, insertBefore) {
     var def = this;
-    var layerMetroLine = this.currentMetroLine.layers.metroLine;
-    var layerLinePaths = this.currentMetroLine.layers.linePaths;
-    var layerJoints = this.currentMetroLine.layers.joints;
+    var metroLine = this.getCurrentMetroLine();
+    var layerMetroLine = metroLine.layers.metroLine;
+    var layerLinePaths = metroLine.layers.linePaths;
+    var layerJoints = metroLine.layers.joints;
     var isHead = typeof x1 != 'undefined' && typeof x2 != 'undefined';
     var path = d3.path();
     path.moveTo(x1, y1);
@@ -449,6 +476,8 @@ angular.module('metro')
         x1: x1, y1: y1, x2: x2, y2: y2, type: type, flipped: flipped, pathString: pathString
       })
     ;
+
+    this.editableBounds();
 
     return linePath;
   };
