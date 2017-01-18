@@ -117,7 +117,14 @@
     <div class="metroline">
       <div class="metroline-icon"></div>
       <input type="text" placeholder="Line Name">
-      <input type="color">
+      <input type="color"
+             ng-model="line.style.color"
+             ng-change="ctrl.updateStyle(line)">
+      <input type="range" step="1" min="0" max="360"
+             style="width: 100px;"
+             ng-model="line.style.rotation"
+             ng-change="ctrl.updateStyle(line)">
+      <label>%</label>
     </div>
     <div>
       <div ng-repeat="station in line.stations track by $index"
