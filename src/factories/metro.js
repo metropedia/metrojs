@@ -1,6 +1,6 @@
 angular.module('metro')
 
-.factory('Metro', ['$timeout', 'metroHelper', 'Bounds', function($timeout, helper, Bounds) {
+.factory('Metro', ['$timeout', 'metroHelper', 'metroBBox', function($timeout, helper, metroBBox) {
   function constructor(def) {
     this.width = def.width;
     this.height = def.height;
@@ -196,6 +196,8 @@ angular.module('metro')
   var evtCanvasZoom = function(metro) {
     return function() {
       if (!metro.shadePos) return;
+      if (!metro.shadePos.x) return;
+      if (!metro.shadePos.y) return;
       var t = d3.event.transform;
       var k = t.k;
       var x = helper.round(t.x, metro.resolution * k);
@@ -249,27 +251,25 @@ angular.module('metro')
     return this.elements;
   };
 
-  metro.editableBounds = function() {
-    var def = this;
+  metro.updateBBox = function() {
     var metroLine = this.getCurrentMetroLine();
     var pathString = this.getPathString(metroLine);
     var guide = helper.drawGuide(metroLine.guide, pathString);
+    var guideData = guide.datum() || {};
 
-    var d = guide.datum() || {};
-    var bounds;
-    if (!d.bounds) {
-      bounds = new Bounds({
+    if (guideData.bbox) {
+      guideData.bbox.listen();
+    } else {
+      var bbox = new metroBBox({
         selection: guide,
         container: metroLine.layers.stations,
-        pointerRadius: def.pointerRadius,
-        width: def.width,
-        height: def.height,
-        resolution: def.resolution,
+        pointerRadius: this.pointerRadius,//for snap
+        width: this.width,//for snap
+        height: this.height,//for snap
+        resolution: this.resolution,//for snap
       });
-    } else {
-      bounds = guide.datum().bounds;
+      guide.datum({bbox: bbox});
     }
-    bounds.display();
   };
 
   metro.getZoom = function() {
@@ -483,7 +483,7 @@ angular.module('metro')
       })
     ;
 
-    this.editableBounds();
+    this.updateBBox();
 
     return linePath;
   };
