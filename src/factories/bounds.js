@@ -306,7 +306,6 @@ angular.module('metro')
       this.setbb(rect, tl, tr, br, bl, top, right, bottom, left);
     }
     bb = this.getbb();
-    //console.log(bbox)
     bb.rect
       .attr('x', bbox.x)
       .attr('y', bbox.y)
