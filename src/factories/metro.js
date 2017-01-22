@@ -1,6 +1,6 @@
 angular.module('metro')
 
-.factory('Metro', ['$timeout', 'metroHelper', 'Bounds', function($timeout, helper, Bounds) {
+.factory('Metro', ['$timeout', 'metroHelper', 'metroBBox', function($timeout, helper, metroBBox) {
   function constructor(def) {
     this.width = def.width;
     this.height = def.height;
@@ -98,9 +98,9 @@ angular.module('metro')
   var evtJointDrag = function(metro) {
     return function() {
           var r = metro.pointerRadius,
-             x2 = helper.round(Math.max(r, Math.min(metro.width - r, d3.event.x)),
+             x2 = helper.round(d3.event.x,
                                metro.resolution),
-             y2 = helper.round(Math.max(r, Math.min(metro.height - r, d3.event.y)),
+             y2 = helper.round(d3.event.y,
                                metro.resolution),
 
           joint = d3.select(this)
@@ -195,6 +195,9 @@ angular.module('metro')
 
   var evtCanvasZoom = function(metro) {
     return function() {
+      if (!metro.shadePos) return;
+      if (!metro.shadePos.x) return;
+      if (!metro.shadePos.y) return;
       var t = d3.event.transform;
       var k = t.k;
       var x = helper.round(t.x, metro.resolution * k);
@@ -248,22 +251,22 @@ angular.module('metro')
     return this.elements;
   };
 
-  metro.editableBounds = function() {
+  metro.updateBBox = function() {
     var metroLine = this.getCurrentMetroLine();
     var pathString = this.getPathString(metroLine);
     var guide = helper.drawGuide(metroLine.guide, pathString);
+    var guideData = guide.datum() || {};
 
-    var d = guide.datum() || {};
-    var bounds;
-    if (!d.bounds) {
-      bounds = new Bounds({
-        selection: guide,
-        container: metroLine.layers.stations
-      });
+    if (guideData.bbox) {
+      guideData.bbox.listen();
     } else {
-      bounds = guide.datum().bounds;
+      var bbox = new metroBBox({
+        selection: guide,
+        container: metroLine.layers.stations,
+        resolution: this.resolution,//for snap
+      });
+      guide.datum({bbox: bbox});
     }
-    bounds.display();
   };
 
   metro.getZoom = function() {
@@ -477,7 +480,7 @@ angular.module('metro')
       })
     ;
 
-    this.editableBounds();
+    this.updateBBox();
 
     return linePath;
   };

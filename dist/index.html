@@ -1,7 +1,8 @@
 <html>
   <head>
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.7/angular.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.4.1/d3.min.js"></script>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="https://d3js.org/d3-selection-multi.v1.min.js"></script>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/zone.js/0.7.4/zone.min.js"></script>
@@ -10,7 +11,7 @@
     <script src="../src/controllers.js"></script>
     <script src="../src/directives.js"></script>
     <script src="../src/factories/metro.js"></script>
-    <script src="../src/factories/bounds.js"></script>
+    <script src="../src/factories/bbox.js"></script>
     <script src="../src/helpers.js"></script>
 
     <style>
@@ -32,8 +33,10 @@
     }
 
     .joint {
-      stroke: rgba(0, 0, 0, .5);
+      fill: rgba(255, 255, 255, 0);
+      stroke: rgba(0, 0, 0, 1);
       stroke-width: 1px;
+      shape-rendering: crispEdges;
       display: none;
     }
 
@@ -43,12 +46,14 @@
 
     .guide {
       stroke: red;
-      stroke-width: 10px;
+      stroke-width: 8px;
       opacity: 0.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
       fill: none;
       display: none;
     }
-    
+
     circle {
       fill: rgba(0, 0, 0, .2);
     }
