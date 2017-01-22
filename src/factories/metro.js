@@ -82,15 +82,11 @@ angular.module('metro')
       var linePath = jointData.linePath;
       var linePathData = linePath.datum();
 
-      var delta = metro.getShadePosDelta();
       var x = linePathData.x2;
       var y = linePathData.y2;
 
-      metro.elements.shade
-        .attr('cx', x * delta.k + delta.x)
-        .attr('cy', y * delta.k + delta.y)
-      ;
-
+      var delta = metro.getShadePosDelta();
+      metro.moveShadePos({x: x * delta.k + delta.x, y: y * delta.k + delta.y});
       metro.setShadePos({x: x, y: y});
     };
   };
@@ -110,8 +106,7 @@ angular.module('metro')
 
       jointData = joint.datum(),
        linePath = jointData.linePath,
-   linePathData = linePath.datum(),
-       shadePos = {x: x2, y: y2};
+   linePathData = linePath.datum();
   
       metro.drawLinePath(
         linePathData.x1, linePathData.y1,
@@ -133,12 +128,10 @@ angular.module('metro')
           nextSiblingLinePathData.flipped,
           nextSiblingLinePath
         );
-      } else {
-        metro.elements.shade
-          .attr('cx', x2)
-          .attr('cy', y2)
-        ;
       }
+
+      var delta = metro.getShadePosDelta();
+      var shadePos = {x: x2 * delta.k + delta.x, y: y2 * delta.k + delta.y};
       metro.notify('jointDrag', this, shadePos);
     };
   };
@@ -168,10 +161,7 @@ angular.module('metro')
       var x2 = helper.round(pos[0], metro.resolution * delta.k);
       var y2 = helper.round(pos[1], metro.resolution * delta.k);
 
-      metro.elements.shade
-        .attr('cx', x2)
-        .attr('cy', y2)
-      ;
+      metro.moveShadePos({x: x2, y: y2});
 
       x2 = (x2 - delta.x)/delta.k;
       y2 = (y2 - delta.y)/delta.k;
@@ -195,9 +185,6 @@ angular.module('metro')
 
   var evtCanvasZoom = function(metro) {
     return function() {
-      if (!metro.shadePos) return;
-      if (!metro.shadePos.x) return;
-      if (!metro.shadePos.y) return;
       var t = d3.event.transform;
       var k = t.k;
       var x = helper.round(t.x, metro.resolution * k);
@@ -207,14 +194,8 @@ angular.module('metro')
         .attr("transform",
           "translate(" + x + "," + y + ")scale(" + k + ")");
 
-      var shadePos = {x: metro.shadePos.x + x, y: metro.shadePos.y + y};
-      metro.elements.shade
-        .attr('cx', metro.shadePos.x * k + x)
-        .attr('cy', metro.shadePos.y * k + y)
-      ;
+      metro.moveShadePos({x: metro.shadePos.x * k + x, y: metro.shadePos.y * k + y});
       metro.setShadePosDelta({x: x, y: y, k: k});
-
-      //
     };
   };
 
@@ -251,20 +232,54 @@ angular.module('metro')
     return this.elements;
   };
 
+  var evtBBoxResized = function(metro) {
+    return function(transform) {
+      var metroLine = metro.getCurrentMetroLine();
+      metroLine.layers.joints.selectAll('.joint').each(function(joint) {
+        var linePath = joint.linePath;
+        var d = linePath.datum();
+        if (d.x1) d.x1 = d.x1 * transform.scaleX + transform.translateX;
+        if (d.y1) d.y1 = d.y1 * transform.scaleY + transform.translateY;
+        if (d.x2) d.x2 = d.x2 * transform.scaleX + transform.translateX;
+        if (d.y2) d.y2 = d.y2 * transform.scaleY + transform.translateY;
+
+        metro.drawLinePath(
+          d.x1, d.y1,
+          d.x2, d.y2,
+          d.type,
+          d.flipped,
+          linePath
+        );
+
+        d3.select(this)
+          .attr('cx', d.x2)
+          .attr('cy', d.y2)
+        ;
+
+        var delta = metro.getShadePosDelta();
+        metro.moveShadePos({x: d.x2 * delta.k + delta.x, y: d.y2 * delta.k + delta.y});
+        metro.setShadePos({x: d.x2, y: d.y2});
+      });
+    };
+  };
+
   metro.updateBBox = function() {
+    var def = this;
     var metroLine = this.getCurrentMetroLine();
     var pathString = this.getPathString(metroLine);
     var guide = helper.drawGuide(metroLine.guide, pathString);
     var guideData = guide.datum() || {};
 
     if (guideData.bbox) {
-      guideData.bbox.listen();
+      guideData.bbox.reload();
     } else {
       var bbox = new metroBBox({
         selection: guide,
         container: metroLine.layers.stations,
         resolution: this.resolution,//for snap
       });
+      bbox.listen();
+      bbox.on('resized', evtBBoxResized(def));
       guide.datum({bbox: bbox});
     }
   };
@@ -297,6 +312,15 @@ angular.module('metro')
 
   metro.getShadePos = function() {
     return this.shadePos;
+  };
+
+  metro.moveShadePos = function(pos) {
+    if (this.elements.shade) {
+      this.elements.shade
+        .attr('cx', pos.x)
+        .attr('cy', pos.y)
+      ;
+    }
   };
 
   metro.setPathType = function(type) {
