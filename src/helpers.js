@@ -10,6 +10,26 @@ angular.module('metro')
     ;
   };
 
+  helper.transformPathString = function(pathString, transform) {
+    return pathString
+      .replace(/([a-z])/ig, '|$1|')
+      .split('|')
+      .map(function(str) {
+        var pt = str.split(',')
+        if (pt.length >= 2) {
+          pt[0] = pt[0] * transform.scaleX + transform.translateX;
+          pt[1] = pt[1] * transform.scaleY + transform.translateY;
+          if (pt[2]) pt[2] = pt[2] * transform.scaleX + transform.translateX;
+          if (pt[3]) pt[3] = pt[3] * transform.scaleY + transform.translateY;
+          return pt.join(',');
+        } else {
+          return str;
+        }
+      })
+      .join('')
+    ;
+  };
+
   helper.drawStation = (container, station, def) => {
     return container.append('rect')
       .attr('station-id', station.id)

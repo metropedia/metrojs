@@ -6,6 +6,7 @@ angular.module('metro')
     this.CONTAINER = def.container;
     this.RESOLUTION = def.resolution;
     this.elements = null;
+    this.events = {};
     this.pointerPos = null;
     this.transform = null;
     this.orig = null;
@@ -164,51 +165,41 @@ angular.module('metro')
       // and remove attributes translate and scale
       var transform = proto.getTransform();
       if (!transform) return;
-      console.log(transform)
-      console.log(proto.SELECTION.attr('d'))
-      var pathString = proto.SELECTION.attr('d')
-        .replace(/([a-z])/ig, '|$1|')
-        .split('|')
-        .map(function(str) {
-          var pt = str.split(',')
-          if (pt.length >= 2) {
-            pt[0] = pt[0] * transform.scaleX + transform.translateX;
-            pt[1] = pt[1] * transform.scaleY + transform.translateY;
-            return pt.join(',');
-          } else {
-            return str;
-          }
-        })
-        .join('')
-      ;
+      //console.log(transform)
+      //console.log(proto.SELECTION.attr('d'))
+      var pathString = helper.transformPathString(proto.SELECTION.attr('d'), transform);
       helper.drawGuide(proto.SELECTION, pathString);
-      console.log(pathString)
+      //console.log(pathString)
 
-      transform = {
-        scaleX: 1,
-        scaleY: 1,
-        translateX: 0,
-        translateY: 0,
-      };
-
-      proto.SELECTION
-        .attr('transform', ''
-         +'translate(' + transform.translateX + ', ' + transform.translateY + ')'
-         +'scale(' + transform.scaleX + ', ' + transform.scaleY + ')'
-        )
-      ;
-
-      proto.destroy();
-      proto.setOrigin(
-        proto.SELECTION.node().getBBox()
-      );
-      proto.render();
-      proto.update();
+      proto.broadcast('resized', transform);
+      proto.reset();
       console.log('end')
     };
   };
 
-  proto.destroy = function() {
+  proto.on = function(evt, cb) {
+    this.events[evt] = cb;
+  };
+
+  proto.broadcast = function(evt, data) {
+    this.events[evt].apply(this, [data]);
+  };
+
+  proto.reset = function() {
+    var transform = {
+      scaleX: 1,
+      scaleY: 1,
+      translateX: 0,
+      translateY: 0,
+    };
+
+    this.SELECTION
+      .attr('transform', ''
+       +'translate(' + transform.translateX + ', ' + transform.translateY + ')'
+       +'scale(' + transform.scaleX + ', ' + transform.scaleY + ')'
+      )
+    ;
+
     var elements = this.getElements();
     if (elements) {
       for (var p in elements) {
@@ -216,8 +207,15 @@ angular.module('metro')
       }
       this.setElements();
     };
+
     this.setTransform(null);
     this.setLastEvent(null);
+
+    this.setOrigin(
+      this.SELECTION.node().getBBox()
+    );
+    this.render();
+    this.update();
   };
 
   proto.render = function() {
@@ -331,6 +329,10 @@ angular.module('metro')
     this.update();
   };
 
+  proto.reload  = function() {
+    this.listen();
+  };
+
   proto.update = function(dest) {
     var el = this.getElements(),
         orig = this.getOrigin(),
@@ -377,7 +379,7 @@ angular.module('metro')
       // void area, not possible
     } else if (min + max === 8) {
       // bilateral symmetry
-      console.log('bilateral symmetry')
+      //console.log('bilateral symmetry')
       swap = sorted[min-1];
       sorted[min-1] = sorted[min+1];
       sorted[min+1] = swap;
@@ -385,7 +387,7 @@ angular.module('metro')
       sorted[max-1] = sorted[max+1];
       sorted[max+1] = swap;
     } else {
-      console.log('point reflection')
+      //console.log('point reflection')
     }
 
     //console.log(sorted);
@@ -421,8 +423,8 @@ angular.module('metro')
       .attrs(handle.left);
 
     if (dest) {
-      var scaleX = dest.width/orig.width;
-      var scaleY = dest.height/orig.height;
+      var scaleX = dest.width/orig.width || 1;
+      var scaleY = dest.height/orig.height || 1;
       return {
         scaleX: scaleX,
         scaleY: scaleY,
