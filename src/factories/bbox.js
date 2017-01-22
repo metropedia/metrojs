@@ -324,11 +324,9 @@ angular.module('metro')
       this.render();
     }
 
-    if (!this.getOrigin()) {
-      this.setOrigin(
-        this.SELECTION.attr('vector-effect', 'non-scaling-stroke').node().getBBox()
-      );
-    }
+    this.setOrigin(
+      this.SELECTION.attr('vector-effect', 'non-scaling-stroke').node().getBBox()
+    );
 
     this.update();
   };
