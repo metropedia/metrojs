@@ -5,10 +5,10 @@ angular.module('metro', [])
   function($scope, $element, Metro, helper){
 
   var def = {
-    pointerRadius: 10,
+    pointerRadius: 15,
     width: 960,
     height: 500,
-    resolution: 20,
+    resolution: 30,
     container: $element.find('div')[1],
     inputMode: 'draw',
     pathType: 'straight'

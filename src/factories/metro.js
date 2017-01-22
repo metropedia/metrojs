@@ -98,9 +98,9 @@ angular.module('metro')
   var evtJointDrag = function(metro) {
     return function() {
           var r = metro.pointerRadius,
-             x2 = helper.round(Math.max(r, Math.min(metro.width - r, d3.event.x)),
+             x2 = helper.round(d3.event.x,
                                metro.resolution),
-             y2 = helper.round(Math.max(r, Math.min(metro.height - r, d3.event.y)),
+             y2 = helper.round(d3.event.y,
                                metro.resolution),
 
           joint = d3.select(this)
@@ -263,9 +263,6 @@ angular.module('metro')
       var bbox = new metroBBox({
         selection: guide,
         container: metroLine.layers.stations,
-        pointerRadius: this.pointerRadius,//for snap
-        width: this.width,//for snap
-        height: this.height,//for snap
         resolution: this.resolution,//for snap
       });
       guide.datum({bbox: bbox});

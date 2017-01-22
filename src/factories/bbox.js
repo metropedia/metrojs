@@ -2,21 +2,16 @@ angular.module('metro')
 
 .factory('metroBBox', ['metroHelper', function(helper) {
   function constructor(def) {
-    this.selection = def.selection;
-    this.container = def.container;
-    this.pointerRadius = def.pointerRadius;
-    this.width = def.width;
-    this.height = def.height;
-    this.resolution = def.resolution;
+    this.SELECTION = def.selection;
+    this.CONTAINER = def.container;
+    this.RESOLUTION = def.resolution;
     this.elements = null;
-    this.orig = {};
+    this.pointerPos = null;
+    this.transform = null;
+    this.orig = null;
   }
 
   var proto = constructor.prototype;
-
-  proto.getSelection = function() {
-    return this.selection;
-  };
 
   proto.getElements = function() {
     return this.elements;
@@ -41,24 +36,51 @@ angular.module('metro')
     for (var p in bbox) {
       obj[p] = bbox[p];
     }
-    this.orig = angular.extend(this.orig, obj);
+    this.orig = obj;
   };
 
   proto.getOrigin = function() {
     return this.orig;
   };
 
+  proto.setLastEvent = function(xy) {
+    this.pointerPos = xy;
+  };
+
+  proto.getLastEvent = function() {
+    return this.pointerPos;
+  };
+
+  proto.setTransform = function(t) {
+    this.transform = t;
+  };
+
+  proto.getTransform = function() {
+    return this.transform;
+  };
+
   proto.snap = function(n) {
-    var r = this.pointerRadius;
-    return helper.round(Math.max(r, Math.min(this.width - r, n)), this.resolution);
+    return helper.round(n, this.RESOLUTION);
   };
 
   var evtHandleDrag = function(proto, dir) {
     return function() {
       var x = proto.snap(d3.event.x);
       var y = proto.snap(d3.event.y);
+      var pointerPos = proto.getLastEvent();
       var dest;
       var orig = proto.getOrigin();
+
+      // skip same snapped positions
+      if (pointerPos) {
+        if (pointerPos.x === x && pointerPos.y === y) {
+          //console.log('ignored');
+          return;
+        }
+      }
+      proto.setLastEvent({x: x, y: y});
+      //console.log('updating');
+
       if (dir == 'tl') {
         dest = {
           x: x,
@@ -117,49 +139,16 @@ angular.module('metro')
         };
       }
 
-      if ( dest.width <= 0 || dest.height <= 0 ) {
-        var el = proto.getElements();
-        var corners = [el.tl, el.tr, el.br, el.bl]
-        var cornersBBox = corners
-          .map(function(c){
-            return c.node().getBBox();
-          })
-        ;
-        var cornersAreas = cornersBBox
-          .map(function(b){
-            return b.x * b.y
-          })
-        ;
-        var tl = cornersAreas.indexOf(Math.min.apply(Math, cornersAreas));
-        var br = cornersAreas.indexOf(Math.max.apply(Math, cornersAreas));
-        var tlbb = cornersBBox[tl];
-        var brbb = cornersBBox[br];
+      var transform = proto.update(dest);
 
-        var area = {
-          x: tlbb.x +5,
-          y: tlbb.y +5,
-          width: brbb.x - tlbb.x,
-          height: brbb.y - tlbb.y
-        };
-        var scaleX = area.width/orig.width;
-        var scaleY = area.height/orig.height;
-        proto.update(dest, area);
-        proto.dest = area;
-      } else {
-        var scaleX = dest.width/orig.width;
-        var scaleY = dest.height/orig.height;
-        var area = dest;
-        proto.update(dest);
-        proto.dest = dest;
-      }
-
-      proto.getSelection()
+      proto.SELECTION
         .attr('transform', ''
-         +'translate(' + (-(orig.x)*(scaleX-1)+(area.x-orig.x))
-                + ', ' + (-(orig.y)*(scaleY-1)+(area.y-orig.y)) + ')'
-         +'scale(' + scaleX + ', ' + scaleY + ')'
+         +'translate(' + transform.translateX + ', ' + transform.translateY + ')'
+         +'scale(' + transform.scaleX + ', ' + transform.scaleY + ')'
         )
       ;
+
+      proto.setTransform(transform);
     };
   };
 
@@ -173,144 +162,285 @@ angular.module('metro')
     return function() {
       // Must transform scaled and translated shape back into original
       // and remove attributes translate and scale
-      /*
-      var b = proto.getElements().area.node().getBoundingClientRect();
-      proto.setOrigin({ x: b.left, y: b.top, width: b.width, height: b.height });
-      */
+      var transform = proto.getTransform();
+      if (!transform) return;
+      console.log(transform)
+      console.log(proto.SELECTION.attr('d'))
+      var pathString = proto.SELECTION.attr('d')
+        .replace(/([a-z])/ig, '|$1|')
+        .split('|')
+        .map(function(str) {
+          var pt = str.split(',')
+          if (pt.length >= 2) {
+            pt[0] = pt[0] * transform.scaleX + transform.translateX;
+            pt[1] = pt[1] * transform.scaleY + transform.translateY;
+            return pt.join(',');
+          } else {
+            return str;
+          }
+        })
+        .join('')
+      ;
+      helper.drawGuide(proto.SELECTION, pathString);
+      console.log(pathString)
+
+      transform = {
+        scaleX: 1,
+        scaleY: 1,
+        translateX: 0,
+        translateY: 0,
+      };
+
+      proto.SELECTION
+        .attr('transform', ''
+         +'translate(' + transform.translateX + ', ' + transform.translateY + ')'
+         +'scale(' + transform.scaleX + ', ' + transform.scaleY + ')'
+        )
+      ;
+
+      proto.destroy();
+      proto.setOrigin(
+        proto.SELECTION.node().getBBox()
+      );
+      proto.render();
+      proto.update();
       console.log('end')
     };
   };
 
-  proto.listen = function() {
+  proto.destroy = function() {
+    var elements = this.getElements();
+    if (elements) {
+      for (var p in elements) {
+        elements[p].remove();
+      }
+      this.setElements();
+    };
+    this.setTransform(null);
+    this.setLastEvent(null);
+  };
+
+  proto.render = function() {
     var proto = this;
+    var area = this.CONTAINER.append('rect')
+      .style('fill', 'none')
+      .classed('bb-line', true)
+      .attr('vector-effect', 'non-scaling-stroke')
+    ;
+    var tl = this.CONTAINER.append('rect')
+      .classed('bb-line tl', true)
+      .style('cursor', 'nwse-resize')
+      .attr('vector-effect', 'non-scaling-stroke')
+      .call(
+        d3.drag()
+          .on('start', evtHandleDragStart(proto, 'tl'))
+          .on('drag', evtHandleDrag(proto, 'tl'))
+          .on('end', evtHandleDragEnd(proto, 'tl'))
+      )
+    ;
+    var top = this.CONTAINER.append('rect')
+      .classed('bb-line top', true)
+      .style('cursor', 'ns-resize')
+      .attr('vector-effect', 'non-scaling-stroke')
+      .call(
+        d3.drag()
+          .on('start', evtHandleDragStart(proto, 'top'))
+          .on('drag', evtHandleDrag(proto, 'top'))
+          .on('end', evtHandleDragEnd(proto, 'top'))
+      )
+    ;
+    var tr = this.CONTAINER.append('rect')
+      .classed('bb-line tr', true)
+      .style('cursor', 'nesw-resize')
+      .attr('vector-effect', 'non-scaling-stroke')
+      .call(
+        d3.drag()
+          .on('start', evtHandleDragStart(proto, 'tr'))
+          .on('drag', evtHandleDrag(proto, 'tr'))
+          .on('end', evtHandleDragEnd(proto, 'tr'))
+      )
+    ;
+    var right = this.CONTAINER.append('rect')
+      .classed('bb-line right', true)
+      .style('cursor', 'ew-resize')
+      .attr('vector-effect', 'non-scaling-stroke')
+      .call(
+        d3.drag()
+          .on('start', evtHandleDragStart(proto, 'right'))
+          .on('drag', evtHandleDrag(proto, 'right'))
+          .on('end', evtHandleDragEnd(proto, 'right'))
+      )
+    ;
+    var br = this.CONTAINER.append('rect')
+      .classed('bb-line br', true)
+      .style('cursor', 'nwse-resize')
+      .attr('vector-effect', 'non-scaling-stroke')
+      .call(
+        d3.drag()
+          .on('start', evtHandleDragStart(proto, 'br'))
+          .on('drag', evtHandleDrag(proto, 'br'))
+          .on('end', evtHandleDragEnd(proto, 'br'))
+      )
+    ;
+    var bottom = this.CONTAINER.append('rect')
+      .classed('bb-line bottom', true)
+      .style('cursor', 'ns-resize')
+      .attr('vector-effect', 'non-scaling-stroke')
+      .call(
+        d3.drag()
+          .on('start', evtHandleDragStart(proto, 'bottom'))
+          .on('drag', evtHandleDrag(proto, 'bottom'))
+          .on('end', evtHandleDragEnd(proto, 'bottom'))
+      )
+    ;
+    var bl = this.CONTAINER.append('rect')
+      .classed('bb-line bl', true)
+      .style('cursor', 'nesw-resize')
+      .attr('vector-effect', 'non-scaling-stroke')
+      .call(
+        d3.drag()
+          .on('start', evtHandleDragStart(proto, 'bl'))
+          .on('drag', evtHandleDrag(proto, 'bl'))
+          .on('end', evtHandleDragEnd(proto, 'bl'))
+      )
+    ;
+    var left = this.CONTAINER.append('rect')
+      .classed('bb-line left', true)
+      .style('cursor', 'ew-resize')
+      .attr('vector-effect', 'non-scaling-stroke')
+      .call(
+        d3.drag()
+          .on('start', evtHandleDragStart(proto, 'left'))
+          .on('drag', evtHandleDrag(proto, 'left'))
+          .on('end', evtHandleDragEnd(proto, 'left'))
+      )
+    ;
+    this.setElements(area, tl, tr, br, bl, top, right, bottom, left);
+  };
+
+  proto.listen = function() {
     var elements = this.getElements();
     if (!elements) {
-      var area = this.container.append('rect')
-        .style('fill', 'none')
-        .classed('bb-line', true)
-        .attr('vector-effect', 'non-scaling-stroke')
-      ;
-      var tl = this.container.append('rect')
-        .classed('bb-line tl', true)
-        .style('cursor', 'nwse-resize')
-        .attr('vector-effect', 'non-scaling-stroke')
-        .call(
-          d3.drag()
-            .on('start', evtHandleDragStart(proto, 'tl'))
-            .on('drag', evtHandleDrag(proto, 'tl'))
-            .on('end', evtHandleDragEnd(proto, 'tl'))
-        )
-      ;
-      var top = this.container.append('rect')
-        .classed('bb-line top', true)
-        .style('cursor', 'ns-resize')
-        .attr('vector-effect', 'non-scaling-stroke')
-        .call(
-          d3.drag()
-            .on('start', evtHandleDragStart(proto, 'top'))
-            .on('drag', evtHandleDrag(proto, 'top'))
-            .on('end', evtHandleDragEnd(proto, 'top'))
-        )
-      ;
-      var tr = this.container.append('rect')
-        .classed('bb-line tr', true)
-        .style('cursor', 'nesw-resize')
-        .attr('vector-effect', 'non-scaling-stroke')
-        .call(
-          d3.drag()
-            .on('start', evtHandleDragStart(proto, 'tr'))
-            .on('drag', evtHandleDrag(proto, 'tr'))
-            .on('end', evtHandleDragEnd(proto, 'tr'))
-        )
-      ;
-      var right = this.container.append('rect')
-        .classed('bb-line right', true)
-        .style('cursor', 'ew-resize')
-        .attr('vector-effect', 'non-scaling-stroke')
-        .call(
-          d3.drag()
-            .on('start', evtHandleDragStart(proto, 'right'))
-            .on('drag', evtHandleDrag(proto, 'right'))
-            .on('end', evtHandleDragEnd(proto, 'right'))
-        )
-      ;
-      var br = this.container.append('rect')
-        .classed('bb-line br', true)
-        .style('cursor', 'nwse-resize')
-        .attr('vector-effect', 'non-scaling-stroke')
-        .call(
-          d3.drag()
-            .on('start', evtHandleDragStart(proto, 'br'))
-            .on('drag', evtHandleDrag(proto, 'br'))
-            .on('end', evtHandleDragEnd(proto, 'br'))
-        )
-      ;
-      var bottom = this.container.append('rect')
-        .classed('bb-line bottom', true)
-        .style('cursor', 'ns-resize')
-        .attr('vector-effect', 'non-scaling-stroke')
-        .call(
-          d3.drag()
-            .on('start', evtHandleDragStart(proto, 'bottom'))
-            .on('drag', evtHandleDrag(proto, 'bottom'))
-            .on('end', evtHandleDragEnd(proto, 'bottom'))
-        )
-      ;
-      var bl = this.container.append('rect')
-        .classed('bb-line bl', true)
-        .style('cursor', 'nesw-resize')
-        .attr('vector-effect', 'non-scaling-stroke')
-        .call(
-          d3.drag()
-            .on('start', evtHandleDragStart(proto, 'bl'))
-            .on('drag', evtHandleDrag(proto, 'bl'))
-            .on('end', evtHandleDragEnd(proto, 'bl'))
-        )
-      ;
-      var left = this.container.append('rect')
-        .classed('bb-line left', true)
-        .style('cursor', 'ew-resize')
-        .attr('vector-effect', 'non-scaling-stroke')
-        .call(
-          d3.drag()
-            .on('start', evtHandleDragStart(proto, 'left'))
-            .on('drag', evtHandleDrag(proto, 'left'))
-            .on('end', evtHandleDragEnd(proto, 'left'))
-        )
-      ;
-      this.setElements(area, tl, tr, br, bl, top, right, bottom, left);
+      this.render();
     }
-    this.setOrigin(
-      this.getSelection().attr('vector-effect', 'non-scaling-stroke').node().getBBox()
-    );
+
+    if (!this.getOrigin()) {
+      this.setOrigin(
+        this.SELECTION.attr('vector-effect', 'non-scaling-stroke').node().getBBox()
+      );
+    }
+
     this.update();
   };
 
-  proto.update = function(bbox, area) {
-    var b = bbox || this.getOrigin();
-    var el = this.getElements();
-    el.tl
-      .attrs({ x: b.x -5, y: b.y -5, width: 10, height: 10, });
-    el.top
-      .attrs({ x: b.x + b.width/2 -5, y: b.y -5, width: 10, height: 10, });
-    el.tr
-      .attrs({ x: b.x + b.width -5, y: b.y -5, width: 10, height: 10, });
-    el.right
-      .attrs({ x: b.x + b.width -5, y: b.y + b.height/2 -5, width: 10, height: 10, });
-    el.br
-      .attrs({ x: b.x + b.width -5, y: b.y + b.height -5, width: 10, height: 10, });
-    el.bottom
-      .attrs({ x: b.x + b.width/2 -5, y: b.y + b.height -5, width: 10, height: 10, });
-    el.bl
-      .attrs({ x: b.x -5, y: b.y + b.height -5, width: 10, height: 10, });
-    el.left.
-      attrs({ x: b.x -5, y: b.y + b.height/2 -5, width: 10, height: 10, });
+  proto.update = function(dest) {
+    var el = this.getElements(),
+        orig = this.getOrigin(),
+        b = dest || orig
+    ;
 
-    var area = area ? area : b;
+    var handle = [
+      { name: 'tl',
+        value: { x: b.x -5, y: b.y -5, width: 10, height: 10 } },
+      { name: 'top',
+        value: { x: b.x + b.width/2 -5, y: b.y -5, width: 10, height: 10 } },
+      { name: 'tr',
+        value: { x: b.x + b.width -5, y: b.y -5, width: 10, height: 10 } },
+      { name: 'right',
+        value: { x: b.x + b.width -5, y: b.y + b.height/2 -5, width: 10, height: 10 } },
+      { name: 'br',
+        value: { x: b.x + b.width -5, y: b.y + b.height -5, width: 10, height: 10, } },
+      { name: 'bottom',
+        value: { x: b.x + b.width/2 -5, y: b.y + b.height -5, width: 10, height: 10 } },
+      { name: 'bl',
+        value: { x: b.x -5, y: b.y + b.height -5, width: 10, height: 10 } },
+      { name: 'left',
+        value: { x: b.x -5, y: b.y + b.height/2 -5, width: 10, height: 10 } },
+    ];
+
+    var sorted = angular.copy(handle);
+    var areas = sorted.map(function(h){
+      return h.value.x * h.value.y;
+    });
+
+    // calculate area size in order to find upper left corner
+    var min = areas.indexOf(Math.min.apply(Math, areas));
+    var max = areas.indexOf(Math.max.apply(Math, areas));
+    //console.log(min, sorted[min].name, max, sorted[max].name);
+
+    sorted = [].concat(
+      sorted.slice(min, sorted.length)
+    ).concat(
+      sorted.slice(0, min)
+    );
+
+    var swap;
+    if (min + max === 2) {
+      // void area, not possible
+    } else if (min + max === 8) {
+      // bilateral symmetry
+      console.log('bilateral symmetry')
+      swap = sorted[min-1];
+      sorted[min-1] = sorted[min+1];
+      sorted[min+1] = swap;
+      swap = sorted[max-1];
+      sorted[max-1] = sorted[max+1];
+      sorted[max+1] = swap;
+    } else {
+      console.log('point reflection')
+    }
+
+    //console.log(sorted);
+    var temp = {};
+    handle.forEach(function(h, i){
+      temp[h.name] = sorted[i].value;
+    });
+    handle = temp;
+    //console.log(handle);
+
+    handle.area = {
+      x: handle['tl'].x +5, y: handle['tl'].y +5,
+      width: Math.abs(b.width), height: Math.abs(b.height)
+    };
+
     el.area
-      .attrs({ x: area.x, y: area.y, width: area.width, height: area.height, });
+      .attrs(handle.area);
+    el.tl
+      .attrs(handle.tl);
+    el.top
+      .attrs(handle.top);
+    el.tr
+      .attrs(handle.tr);
+    el.right
+      .attrs(handle.right);
+    el.br
+      .attrs(handle.br);
+    el.bottom
+      .attrs(handle.bottom);
+    el.bl
+      .attrs(handle.bl);
+    el.left
+      .attrs(handle.left);
+
+    if (dest) {
+      var scaleX = dest.width/orig.width;
+      var scaleY = dest.height/orig.height;
+      return {
+        scaleX: scaleX,
+        scaleY: scaleY,
+        translateX: -(orig.x)*(scaleX-1)+(handle.area.x-orig.x) + (scaleX < 0 ? handle.area.width : 0),
+        translateY: -(orig.y)*(scaleY-1)+(handle.area.y-orig.y) + (scaleY < 0 ? handle.area.height : 0),
+      };
+    } else  {
+      return {
+        scaleX: 1,
+        scaleY: 1,
+        translateX: 0,
+        translateY: 0,
+      };
+    };
   };
 
-  return constructor; 
+  return constructor;
 }])
 ;
