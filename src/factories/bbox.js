@@ -70,16 +70,6 @@ angular.module('metro')
     return function() {
       var x = proto.snap(d3.event.x);
       var y = proto.snap(d3.event.y);
-
-      if (x < 0 + proto.RESOLUTION
-       || x > proto.WIDTH - proto.RESOLUTION
-       || y < 0 + proto.RESOLUTION
-       || y > proto.HEIGHT - proto.RESOLUTION
-      ) {
-        console.log('out of canvas');
-        return;
-      }
-
       var pointerPos = proto.getLastEvent();
       var dest;
       var orig = proto.getOrigin();
@@ -372,13 +362,13 @@ angular.module('metro')
 
     var sorted = angular.copy(handle);
     var areas = sorted.map(function(h){
-      return h.value.x * h.value.y;
+      return Math.abs(h.value.x * h.value.y);
     });
 
     // calculate area size in order to find upper left corner
     var min = areas.indexOf(Math.min.apply(Math, areas));
     var max = areas.indexOf(Math.max.apply(Math, areas));
-    //console.log(min, sorted[min].name, max, sorted[max].name);
+    console.log(min, sorted[min].name, max, sorted[max].name);
 
     sorted = [].concat(
       sorted.slice(min, sorted.length)
