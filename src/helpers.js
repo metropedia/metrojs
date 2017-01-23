@@ -72,8 +72,16 @@ angular.module('metro')
   };
 
   helper.drawGridlines = (container, def) => {
+    container.append('rect')
+      .attr('x', 0)
+      .attr('y', 0)
+      .attr('width', def.width)
+      .attr('height', def.height)
+      .attr('fill', 'white')
+    ;
+
     container.selectAll()
-      .data(d3.range(1, def.width / def.resolution))
+      .data(d3.range(0, def.width / def.resolution +1))
       .enter()
       .append('line')
         .attr('class', 'vertical')
@@ -85,7 +93,7 @@ angular.module('metro')
     ;
     
     container.selectAll()
-      .data(d3.range(1, def.height / def.resolution))
+      .data(d3.range(0, def.height / def.resolution +1))
       .enter()
       .append('line')
         .attr('class', 'horizontal')

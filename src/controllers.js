@@ -3,7 +3,6 @@ angular.module('metro', [])
 .controller('metroDesigner', [
   '$scope', '$element', 'Metro', 'metroHelper',
   function($scope, $element, Metro, helper){
-
   var def = {
     pointerRadius: 10,
     width: 960,
@@ -22,9 +21,18 @@ angular.module('metro', [])
       ctrl.currentEditJoint = null;
       ctrl.inputMode = metro.getInputMode();
       ctrl.pathType = metro.getPathType();
+      ctrl.scalePercentage = 100.00;
+      ctrl.canvasWidth = metro.width;
+      ctrl.canvasHeight = metro.height;
 
-  metro.on('jointDrag', function(shadePos) {
-    //console.log(shadePos)
+  metro.on('zooming', function(transform) {
+    ctrl.scalePercentage = (transform.k * 100).toFixed(2);
+    $scope.$apply();
+  });
+
+  metro.on('jointDrag', function(jointData) {
+    ctrl.currentEditJoint = jointData;
+    $scope.$apply();
   });
 
   metro.on('jointMouseDown', function(jointData) {
@@ -50,6 +58,12 @@ angular.module('metro', [])
   ctrl.zoomOut = function() {
     metro.getElements().svg.transition().call(
       metro.getZoom().scaleBy, 0.75
+    );
+  }; 
+
+  ctrl.center = function(x, y, k) {
+    metro.getElements().svg.transition().call(
+      metro.getZoom().transform, d3.zoomIdentity.translate(x||0, y||0).scale(k || 1)
     );
   }; 
 
@@ -208,6 +222,9 @@ angular.module('metro', [])
       .attr('y', d.y)
     ;
   };
+
+  var startWith = 0.76;
+  ctrl.center(ctrl.canvasWidth/2*(1-startWith), ctrl.canvasHeight/2*(1-startWith), startWith);
 }])
 
 
