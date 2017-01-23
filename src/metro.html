@@ -1,5 +1,5 @@
 <div class="metro-designer">
-  <div class="workspace">
+  <div class="designer-panel">
     <div>
       <div class="control-panel">
         Width <input type="number" ng-model="ctrl.canvasWidth"
@@ -117,11 +117,8 @@
       </div>
     </div>
   </div>
-  <div>
-  
-  </div>
-  <div class="metroline-editor">
-    <h1>Metro Lines</h1> 
+  <div class="developer-panel">
+    <h5>Metro Lines</h5> 
     <div ng-repeat="line in ctrl.metroLines track by $index"
          metroline-id="{{line.id}}">
       <div class="metroline">

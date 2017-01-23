@@ -3,9 +3,11 @@ angular.module('metro', [])
 .controller('metroDesigner', [
   '$scope', '$element', 'Metro', 'metroHelper',
   function($scope, $element, Metro, helper){
+
+  var designerPanel = $element[0].querySelector('.designer-panel');
   var def = {
     pointerRadius: 10,
-    width: 960,
+    width: designerPanel.clientWidth,
     height: 500,
     resolution: 20,
     container: $element.find('div')[1],
