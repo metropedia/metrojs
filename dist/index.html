@@ -18,17 +18,18 @@
     svg {
       box-sizing: border-box;
       border: 1px solid rgb(212, 212, 212);
+      background-color: rgba(0, 0, 0, 0.05);
       /*cursor: none;*/
     }
 
-    svg.input-mode-select .joint,
-    svg.input-mode-select .guide,
-    svg.input-mode-select .bb-line {
+    svg.input-mode-select .current-metroline .joint,
+    svg.input-mode-select .current-metroline .guide,
+    svg.input-mode-select .current-metroline .bb-line {
       display: inherit;
     }
 
-    svg.input-mode-select .joint.hover,
-    svg.input-mode-select .joint:hover {
+    svg.input-mode-select .current-metroline .joint.hover,
+    svg.input-mode-select .current-metroline .joint:hover {
       fill: rgba(255, 0, 0, .2);
     }
 
@@ -140,7 +141,6 @@
     </style>
   </head>
   <body>
-    <h1>metro.js</h1>
     <metro-designer topic="'stm'"></metro-designer>
 
     <script>

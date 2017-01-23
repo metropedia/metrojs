@@ -5,6 +5,8 @@ angular.module('metro')
     this.SELECTION = def.selection;
     this.CONTAINER = def.container;
     this.RESOLUTION = def.resolution;
+    this.WIDTH = def.width;
+    this.HEIGHT = def.height;
     this.elements = null;
     this.events = {};
     this.pointerPos = null;
@@ -68,6 +70,16 @@ angular.module('metro')
     return function() {
       var x = proto.snap(d3.event.x);
       var y = proto.snap(d3.event.y);
+
+      if (x < 0 + proto.RESOLUTION
+       || x > proto.WIDTH - proto.RESOLUTION
+       || y < 0 + proto.RESOLUTION
+       || y > proto.HEIGHT - proto.RESOLUTION
+      ) {
+        console.log('out of canvas');
+        return;
+      }
+
       var pointerPos = proto.getLastEvent();
       var dest;
       var orig = proto.getOrigin();
@@ -423,8 +435,8 @@ angular.module('metro')
       .attrs(handle.left);
 
     if (dest) {
-      var scaleX = dest.width/orig.width || 1;
-      var scaleY = dest.height/orig.height || 1;
+      var scaleX = dest.width/orig.width || 0.000001;
+      var scaleY = dest.height/orig.height || 0.000001;
       return {
         scaleX: scaleX,
         scaleY: scaleY,

@@ -16,13 +16,14 @@ angular.module('metro')
     this.elements = null;
     this.shadePos = null;
     this.shadePosDelta = {x: 0, y: 0, k: 1};
-    this.zoom = d3.zoom().scaleExtent([1, 10]);
+    this.zoom = d3.zoom().scaleExtent([0.3, 10]);
 
     this.evt = {
       jointMouseDown: null,
       jointDrag: null,
       splashButtonClick: null,
-      canvasMouseClick: null
+      canvasMouseClick: null,
+      zooming: null
     };
     this.run();
   }
@@ -40,7 +41,6 @@ angular.module('metro')
       stations: [],
       style: {
         color: '',
-        rotation: 0
       }
     },
     station: {
@@ -53,18 +53,18 @@ angular.module('metro')
 
   var evtJointMouseDown = function(metro) {
     return function() {
-      var jointData = metro.getCurrentEditJoint();
-      if (jointData) {
-        d3.select(jointData.joint).classed('current', false);
+      var currentJointData = metro.getCurrentEditJoint();
+      if (currentJointData) {
+        d3.select(currentJointData.joint).classed('current', false);
       }
       d3.select(this).classed('current', true);
   
       var linePath = d3.select(this).datum().linePath;
-      var data = linePath.datum();
+
       var jointData = {
         linePath: linePath,
         joint: this,
-        data: data
+        data: linePath.datum()
       };
 
       metro.setCurrentEditJoint(jointData);
@@ -132,7 +132,13 @@ angular.module('metro')
 
       var delta = metro.getShadePosDelta();
       var shadePos = {x: x2 * delta.k + delta.x, y: y2 * delta.k + delta.y};
-      metro.notify('jointDrag', this, shadePos);
+
+      var jointData = {
+        linePath: linePath,
+        joint: this,
+        data: linePathData
+      };
+      metro.notify('jointDrag', this, jointData);
     };
   };
 
@@ -189,17 +195,20 @@ angular.module('metro')
       var k = t.k;
       var x = helper.round(t.x, metro.resolution * k);
       var y = helper.round(t.y, metro.resolution * k);
-
+      
       metro.elements.layerZoomable
         .attr("transform",
           "translate(" + x + "," + y + ")scale(" + k + ")");
 
-      metro.moveShadePos({x: metro.shadePos.x * k + x, y: metro.shadePos.y * k + y});
+      if (metro.shadePos && metro.shadePos.x && metro.shadePos.y) {
+        metro.moveShadePos({x: metro.shadePos.x * k + x, y: metro.shadePos.y * k + y});
+      }
       metro.setShadePosDelta({x: x, y: y, k: k});
+      metro.notify('zooming', this, t);
     };
   };
 
-  metro.run = function(container) {
+  metro.run = function() {
     var def = this;
     var svg = helper.drawCanvas(d3.select(this.container), def)
       .on('mousemove', evtCanvasMouseMove(def))
@@ -276,7 +285,9 @@ angular.module('metro')
       var bbox = new metroBBox({
         selection: guide,
         container: metroLine.layers.stations,
-        resolution: this.resolution,//for snap
+        resolution: this.resolution,//for snap,
+        width: this.width,
+        height: this.height
       });
       bbox.listen();
       bbox.on('resized', evtBBoxResized(def));
@@ -350,6 +361,10 @@ angular.module('metro')
   };
 
   metro.setCurrentMetroLine = function(m) {
+    if (this.currentMetroLine) {
+      this.currentMetroLine.layers.metroLine.classed('current-metroline', false);
+    }
+    m.layers.metroLine.classed('current-metroline', true);
     this.currentMetroLine = m;
   };
 

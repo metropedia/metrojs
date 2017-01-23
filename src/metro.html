@@ -1,150 +1,156 @@
-<div>
-  <div>
-    <div class="control-panel">
-      <button class="btn btn-xs"
-              ng-disabled="0"
-              ng-click="ctrl.newMetroLine();">New Metro Line</button>
-
-      <div class="btn-group btn-group-xs">
-        <button class="btn btn-xs"
-                ng-class="{'btn-primary': ctrl.inputMode == 'draw'}"
-                ng-click="ctrl.draw();">Draw</button>
-        <button class="btn btn-xs"
-                ng-class="{'btn-primary': ctrl.inputMode == 'edit'}"
-                ng-click="ctrl.editMetroLine();">Refine</button>
-        <button class="btn btn-xs"
-                ng-class="{'btn-primary': ctrl.inputMode == 'implement'}"
-                ng-click="ctrl.implement();">Implement</button>
+<div class="metro-designer">
+  <div class="workspace">
+    <div>
+      <div class="control-panel">
+        Width <input type="number" ng-model="ctrl.canvasWidth"
+                    class="form-control">
+        Height <input type="number" ng-model="ctrl.canvasHeight"
+                    class="form-control">
+        <button class="btn btn-xs">Set Size</button>
       </div>
-
-      <button class="btn btn-xs">Save</button>
-
-      <button class="btn btn-xs">Export</button>
-
-      <button class="btn btn-xs"
-              ng-click="ctrl.zoomIn()">Zoom In +</button>
-
-      <button class="btn btn-xs"
-              ng-click="ctrl.zoomOut()">Zoom Out -</button>
-
-      <button class="btn btn-xs"
-              ng-click="ctrl.center()">Center</button>
-    </div>
-    <div class="control-panel ng-hide"
-         ng-show="ctrl.inputMode == 'draw'">
-      <div class="btn-group btn-group-xs">
-        <button class="btn btn-xs"
-                ng-class="{ 'btn-primary': ctrl.pathType == 'straight' }"
-                ng-click="ctrl.useStraightPath();">Straight</button>
-        <button class="btn btn-xs"
-                ng-class="{ 'btn-primary': ctrl.pathType == 'curly' }"
-                ng-click="ctrl.useCurlyPath();">Curly</button>
-      </div>
-      <button class="btn btn-xs"
-              ng-disabled="0"
-              ng-click="ctrl.flipLast();">flip</button>
-    </div>
-    <div class="control-panel input-group-sm ng-hide"
-         ng-show="ctrl.inputMode == 'edit'">
-      <!--
-      <pre>{{ctrl.currentEditJoint.data | json}}</pre>
-      -->
-      <label>
-      x1 <input type="number" step="20" ng-model="ctrl.currentEditJoint.data.x1"
-               readonly
-               class="form-control"
-               ng-change="ctrl.applyLinePathChange()">
-      </label>
-      <label>
-      y1 <input type="number" step="20" ng-model="ctrl.currentEditJoint.data.y1"
-               readonly
-               class="form-control"
-               ng-change="ctrl.applyLinePathChange()">
-      </label>
-      <label>
-      x2 <input type="number" step="20" ng-model="ctrl.currentEditJoint.data.x2"
-               readonly
-               class="form-control"
-               ng-change="ctrl.applyLinePathChange()">
-      </label>
-      <label>
-      y2 <input type="number" step="20" ng-model="ctrl.currentEditJoint.data.y2"
-               readonly
-               class="form-control"
-               ng-change="ctrl.applyLinePathChange()">
-      </label>
-      <label>type</label>
-        <div class="btn-group btn-group-xs">
-          <button class="btn btn-xs"
-                  ng-class="{ 'btn-primary': ctrl.currentEditJoint.data.type == 'straight' }"
-                  ng-click="
-                    ctrl.currentEditJoint.data.type = 'straight';
-                    ctrl.applyLinePathChange();
-                  ">Straight</button>
-          <button class="btn btn-xs"
-                  ng-class="{ 'btn-primary': ctrl.currentEditJoint.data.type == 'curly' }"
-                  ng-click="
-                    ctrl.currentEditJoint.data.type = 'curly';
-                    ctrl.applyLinePathChange();
-                  ">Curly</button>
-        </div>
-      <label>
-      flipped
-        <input type="checkbox" ng-model="ctrl.currentEditJoint.data.flipped"
-               ng-true-value="true" ng-false-value="false"
-               ng-change="ctrl.applyLinePathChange()">
-      </label>
-      split
+      <div class="control-panel">
         <button class="btn btn-xs"
                 ng-disabled="0"
-                ng-click="ctrl.splitLinePath();">Split</button>
-    </div>
-    <div class="control-panel ng-hide"
-         ng-show="ctrl.inputMode == 'implement'">
-      <button class="btn btn-xs"
-              ng-disabled="0"
-              ng-click="ctrl.addStation()">Add Station</button>
+                ng-click="ctrl.newMetroLine();">New Metro Line</button>
+  
+        <div class="btn-group btn-group-xs">
+          <button class="btn btn-xs"
+                  ng-class="{'btn-primary': ctrl.inputMode == 'draw'}"
+                  ng-click="ctrl.draw();">Draw</button>
+          <button class="btn btn-xs"
+                  ng-class="{'btn-primary': ctrl.inputMode == 'edit'}"
+                  ng-click="ctrl.editMetroLine();">Edit</button>
+          <button class="btn btn-xs"
+                  ng-class="{'btn-primary': ctrl.inputMode == 'implement'}"
+                  ng-click="ctrl.implement();">Implement</button>
+        </div>
+  
+        <button class="btn btn-xs">Save</button>
+  
+        <button class="btn btn-xs">Export</button>
+  
+        <button class="btn btn-xs"
+                ng-click="ctrl.zoomIn()">Zoom In +</button>
+  
+        <button class="btn btn-xs"
+                ng-click="ctrl.zoomOut()">Zoom Out -</button>
+  
+        <label>{{ctrl.scalePercentage}}%</label>
+  
+        <button class="btn btn-xs"
+                ng-click="ctrl.center()">Center & 100%</button>
+      </div>
+      <div class="control-panel ng-hide"
+           ng-show="ctrl.inputMode == 'draw'">
+        <div class="btn-group btn-group-xs">
+          <button class="btn btn-xs"
+                  ng-class="{ 'btn-primary': ctrl.pathType == 'straight' }"
+                  ng-click="ctrl.useStraightPath();">Straight</button>
+          <button class="btn btn-xs"
+                  ng-class="{ 'btn-primary': ctrl.pathType == 'curly' }"
+                  ng-click="ctrl.useCurlyPath();">Curly</button>
+        </div>
+        <button class="btn btn-xs"
+                ng-disabled="0"
+                ng-click="ctrl.flipLast();">flip</button>
+      </div>
+      <div class="control-panel input-group-sm ng-hide"
+           ng-show="ctrl.inputMode == 'edit'">
+        <!--
+        <pre>{{ctrl.currentEditJoint.data | json}}</pre>
+        -->
+        <label>
+        x1 <input type="number" step="20" ng-model="ctrl.currentEditJoint.data.x1"
+                 readonly
+                 class="form-control"
+                 ng-change="ctrl.applyLinePathChange()">
+        </label>
+        <label>
+        y1 <input type="number" step="20" ng-model="ctrl.currentEditJoint.data.y1"
+                 readonly
+                 class="form-control"
+                 ng-change="ctrl.applyLinePathChange()">
+        </label>
+        <label>
+        x2 <input type="number" step="20" ng-model="ctrl.currentEditJoint.data.x2"
+                 readonly
+                 class="form-control"
+                 ng-change="ctrl.applyLinePathChange()">
+        </label>
+        <label>
+        y2 <input type="number" step="20" ng-model="ctrl.currentEditJoint.data.y2"
+                 readonly
+                 class="form-control"
+                 ng-change="ctrl.applyLinePathChange()">
+        </label>
+        <label>type</label>
+          <div class="btn-group btn-group-xs">
+            <button class="btn btn-xs"
+                    ng-class="{ 'btn-primary': ctrl.currentEditJoint.data.type == 'straight' }"
+                    ng-click="
+                      ctrl.currentEditJoint.data.type = 'straight';
+                      ctrl.applyLinePathChange();
+                    ">Straight</button>
+            <button class="btn btn-xs"
+                    ng-class="{ 'btn-primary': ctrl.currentEditJoint.data.type == 'curly' }"
+                    ng-click="
+                      ctrl.currentEditJoint.data.type = 'curly';
+                      ctrl.applyLinePathChange();
+                    ">Curly</button>
+          </div>
+        <label>
+        flipped
+          <input type="checkbox" ng-model="ctrl.currentEditJoint.data.flipped"
+                 ng-true-value="true" ng-false-value="false"
+                 ng-change="ctrl.applyLinePathChange()">
+        </label>
+        split
+          <button class="btn btn-xs"
+                  ng-disabled="0"
+                  ng-click="ctrl.splitLinePath();">Split</button>
+      </div>
+      <div class="control-panel ng-hide"
+           ng-show="ctrl.inputMode == 'implement'">
+        <button class="btn btn-xs"
+                ng-disabled="0"
+                ng-click="ctrl.addStation()">Add Station</button>
+      </div>
     </div>
   </div>
-</div>
-<div>
-
-</div>
-<div class="metroline-editor">
-  <h1>Metro Lines</h1> 
-  <div ng-repeat="line in ctrl.metroLines track by $index"
-       metroline-id="{{line.id}}">
-    <div class="metroline">
-      <div class="metroline-icon"></div>
-      <input type="text" placeholder="Line Name">
-      <input type="color"
-             ng-model="line.style.color"
-             ng-change="ctrl.updateStyle(line)">
-      <input type="range" step="1" min="0" max="360"
-             style="width: 100px;"
-             ng-model="line.style.rotation"
-             ng-change="ctrl.updateStyle(line)">
-      <label>%</label>
-    </div>
-    <div>
-      <div ng-repeat="station in line.stations track by $index"
-           station-id="{{station.id}}" class="station">
-        <div class="station-icon"></div>
-        <input type="text" placeholder="Station Name">
-        <input type="color">
-        <input type="range" step="0.1" min="0" max="100"
-               style="width: 100px;"
-               ng-model="station.position"
-               ng-change="ctrl.moveStation(line, station)">
-        <input type="number" step="0.1" min="0" max="100"
-               style="width: 50px;"
-               ng-model="station.position"
-               ng-change="ctrl.moveStation(line, station)">
-        <label>%</label>
+  <div>
+  
+  </div>
+  <div class="metroline-editor">
+    <h1>Metro Lines</h1> 
+    <div ng-repeat="line in ctrl.metroLines track by $index"
+         metroline-id="{{line.id}}">
+      <div class="metroline">
+        <div class="metroline-icon"></div>
+        <input type="text" placeholder="Line Name">
+        <input type="color"
+               ng-model="line.style.color"
+               ng-change="ctrl.updateStyle(line)">
+      </div>
+      <div>
+        <div ng-repeat="station in line.stations track by $index"
+             station-id="{{station.id}}" class="station">
+          <div class="station-icon"></div>
+          <input type="text" placeholder="Station Name">
+          <input type="color">
+          <input type="range" step="0.1" min="0" max="100"
+                 style="width: 100px;"
+                 ng-model="station.position"
+                 ng-change="ctrl.moveStation(line, station)">
+          <input type="number" step="0.1" min="0" max="100"
+                 style="width: 50px;"
+                 ng-model="station.position"
+                 ng-change="ctrl.moveStation(line, station)">
+          <label>%</label>
+        </div>
       </div>
     </div>
   </div>
 </div>
-<!--
-<pre>{{ctrl.metroLines | json}}</pre>
--->
+  <!--
+  <pre>{{ctrl.metroLines | json}}</pre>
+  -->
