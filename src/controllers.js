@@ -173,9 +173,6 @@ angular.module('metro', [])
       flipped: d.flipped
     };
 
-    linePathJoint.joint.remove();
-    linePathJoint.linePath.remove();
-
     metro.drawLinePath(
       left.x1, left.y1,
       left.x2, left.y2,
@@ -190,6 +187,10 @@ angular.module('metro', [])
       null,
       linePathJoint.linePath
     );
+
+    linePathJoint.joint.remove();
+    linePathJoint.linePath.remove();
+
   };
 
   ctrl.addStation = function() {
