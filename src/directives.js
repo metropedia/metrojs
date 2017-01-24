@@ -3,11 +3,11 @@ angular.module('metro')
 .directive('metroDesigner', function() {
   return {
     scope: {
-      topic: '='
+      plugins: '='
     },
-    templateUrl: '../src/metro.html',
+    templateUrl: '../src/app.html',
     controller: 'metroDesigner',
-    controllerAs: 'ctrl',
+    controllerAs: 'app',
   };
 })
 ;
