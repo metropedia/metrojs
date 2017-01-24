@@ -1,0 +1,121 @@
+<div class="root">
+  <div class="panel-north">
+    <div>
+      <div class="control-panel">
+        Width <input type="number" ng-model="app.canvasWidth"
+                    class="form-control">
+        Height <input type="number" ng-model="app.canvasHeight"
+                    class="form-control">
+        <button class="btn btn-xs">Set Size</button>
+      </div>
+      <div class="control-panel">
+        <button class="btn btn-xs"
+                ng-disabled="0"
+                ng-click="app.newMetroLine();">New Metro Line</button>
+  
+        <div class="toolset-primary btn-group btn-group-xs">
+          <button class="btn btn-xs"
+                  ng-class="{'btn-primary': app.inputMode == 'draw'}"
+                  ng-click="app.draw();">Draw</button>
+          <button class="btn btn-xs"
+                  ng-class="{'btn-primary': app.inputMode == 'edit'}"
+                  ng-click="app.editMetroLine();">Edit</button>
+          <!--Metro Station Implement-->
+        </div>
+  
+        <button class="btn btn-xs">Save</button>
+  
+        <button class="btn btn-xs">Export</button>
+  
+        <button class="btn btn-xs"
+                ng-click="app.zoomIn()">Zoom In +</button>
+  
+        <button class="btn btn-xs"
+                ng-click="app.zoomOut()">Zoom Out -</button>
+  
+        <label>{{app.scalePercentage}}%</label>
+  
+        <button class="btn btn-xs"
+                ng-click="app.center()">Center & 100%</button>
+      </div>
+      <div class="control-panel ng-hide"
+           ng-show="app.inputMode == 'draw'">
+        <div class="btn-group btn-group-xs">
+          <button class="btn btn-xs"
+                  ng-class="{ 'btn-primary': app.pathType == 'straight' }"
+                  ng-click="app.useStraightPath();">Straight</button>
+          <button class="btn btn-xs"
+                  ng-class="{ 'btn-primary': app.pathType == 'curly' }"
+                  ng-click="app.useCurlyPath();">Curly</button>
+        </div>
+        <button class="btn btn-xs"
+                ng-disabled="0"
+                ng-click="app.flipLast();">flip</button>
+      </div>
+      <div class="control-panel input-group-sm ng-hide"
+           ng-show="app.inputMode == 'edit'">
+        <!--
+        <pre>{{app.currentEditJoint.data | json}}</pre>
+        -->
+        <label>
+        x1 <input type="number" step="20" ng-model="app.currentEditJoint.data.x1"
+                 readonly
+                 class="form-control"
+                 ng-change="app.applyLinePathChange()">
+        </label>
+        <label>
+        y1 <input type="number" step="20" ng-model="app.currentEditJoint.data.y1"
+                 readonly
+                 class="form-control"
+                 ng-change="app.applyLinePathChange()">
+        </label>
+        <label>
+        x2 <input type="number" step="20" ng-model="app.currentEditJoint.data.x2"
+                 readonly
+                 class="form-control"
+                 ng-change="app.applyLinePathChange()">
+        </label>
+        <label>
+        y2 <input type="number" step="20" ng-model="app.currentEditJoint.data.y2"
+                 readonly
+                 class="form-control"
+                 ng-change="app.applyLinePathChange()">
+        </label>
+        <label>type</label>
+          <div class="btn-group btn-group-xs">
+            <button class="btn btn-xs"
+                    ng-class="{ 'btn-primary': app.currentEditJoint.data.type == 'straight' }"
+                    ng-click="
+                      app.currentEditJoint.data.type = 'straight';
+                      app.applyLinePathChange();
+                    ">Straight</button>
+            <button class="btn btn-xs"
+                    ng-class="{ 'btn-primary': app.currentEditJoint.data.type == 'curly' }"
+                    ng-click="
+                      app.currentEditJoint.data.type = 'curly';
+                      app.applyLinePathChange();
+                    ">Curly</button>
+          </div>
+        <label>
+        flipped
+          <input type="checkbox" ng-model="app.currentEditJoint.data.flipped"
+                 ng-true-value="true" ng-false-value="false"
+                 ng-change="app.applyLinePathChange()">
+        </label>
+        split
+          <button class="btn btn-xs"
+                  ng-disabled="0"
+                  ng-click="app.splitLinePath();">Split</button>
+      </div>
+      <div class="toolset-secondary "></div>
+      <!--sub toolset of Metro Implement-->
+    </div>
+  </div>
+  <div class="panel-east">
+    <!--Default Developer Panel-->
+    <!--Plugin Panels-->
+  </div>
+</div>
+  <!--
+  <pre>{{app.metroLines | json}}</pre>
+  -->
