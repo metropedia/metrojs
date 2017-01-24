@@ -1,49 +1,80 @@
 angular.module('metro', [])
 
 .controller('metroDesigner', [
-  '$scope', '$element', 'Metro', 'metroHelper',
-  function($scope, $element, Metro, helper){
+  '$scope', '$element', '$compile', '$templateRequest', 'Metro', 'metroHelper',
+  function($scope, $element, $compile, $templateRequest, Metro, helper){
 
-  var designerPanel = $element[0].querySelector('.designer-panel');
+  var root = $element[0];
+  var viewport = root.querySelector('.panel-north');
   var def = {
     pointerRadius: 10,
-    width: designerPanel.clientWidth,
+    width: viewport.clientWidth,
     height: 500,
     resolution: 20,
     container: $element.find('div')[1],
     inputMode: 'draw',
-    pathType: 'straight'
+    pathType: 'straight',
   };
 
   var metro = new Metro(def);
 
-  var ctrl = this;
-      ctrl.topic = $scope.topic;
-      ctrl.metroLines = [];
-      ctrl.currentEditJoint = null;
-      ctrl.inputMode = metro.getInputMode();
-      ctrl.pathType = metro.getPathType();
-      ctrl.scalePercentage = 100.00;
-      ctrl.canvasWidth = metro.width;
-      ctrl.canvasHeight = metro.height;
+  var app = this;
+      app.foo = 'bar';
+      app.metroLines = [];
+      app.currentEditJoint = null;
+      app.inputMode = metro.getInputMode();
+      app.pathType = metro.getPathType();
+      app.scalePercentage = 100.00;
+      app.canvasWidth = metro.width;
+      app.canvasHeight = metro.height;
+
+  ($scope.plugins || []).forEach(function(p) {
+    var constructor = angular.injector(['ng', 'metro']).get(p.name).constructor;
+    var plugin = new constructor(app, metro);
+    var base = p.base;
+
+    $templateRequest(base + 'partials/' + p.partials['toolset-primary'], true)
+      .then(function(html) {
+        var compiled = $compile(html)($scope);
+        var container = root.querySelector('.toolset-primary');
+        angular.element(container).append(compiled);
+      })
+    ;
+
+    $templateRequest(base + 'partials/' + p.partials['toolset-secondary'], true)
+      .then(function(html) {
+        var compiled = $compile(html)($scope);
+        var container = root.querySelector('.toolset-secondary');
+        angular.element(container).append(compiled);
+      })
+    ;
+
+    $templateRequest(base + 'partials/' + p.partials['panel-east'], true)
+      .then(function(html) {
+        var compiled = $compile(html)($scope);
+        var container = root.querySelector('.panel-east');
+        angular.element(container).append(compiled);
+      })
+    ;
+  });
 
   metro.on('zooming', function(transform) {
-    ctrl.scalePercentage = (transform.k * 100).toFixed(2);
+    app.scalePercentage = (transform.k * 100).toFixed(2);
     $scope.$apply();
   });
 
   metro.on('jointDrag', function(jointData) {
-    ctrl.currentEditJoint = jointData;
+    app.currentEditJoint = jointData;
     $scope.$apply();
   });
 
   metro.on('jointMouseDown', function(jointData) {
-    ctrl.currentEditJoint = jointData;
+    app.currentEditJoint = jointData;
     $scope.$apply();
   });
 
   metro.on('splashButtonClick', function() {
-    ctrl.newMetroLine();
+    app.newMetroLine();
     $scope.$apply();
   });
 
@@ -51,32 +82,32 @@ angular.module('metro', [])
     //console.log(shadePos)
   });
 
-  ctrl.zoomIn = function() {
+  app.zoomIn = function() {
     metro.getElements().svg.transition().call(
       metro.getZoom().scaleBy, 1.5
     );
   }; 
 
-  ctrl.zoomOut = function() {
+  app.zoomOut = function() {
     metro.getElements().svg.transition().call(
       metro.getZoom().scaleBy, 0.75
     );
   }; 
 
-  ctrl.center = function(x, y, k) {
+  app.center = function(x, y, k) {
     metro.getElements().svg.transition().call(
       metro.getZoom().transform, d3.zoomIdentity.translate(x||0, y||0).scale(k || 1)
     );
   }; 
 
-  ctrl.newMetroLine = function() {
+  app.newMetroLine = function() {
     var metroLine = metro.addMetroLine();
     metro.setCurrentMetroLine(metroLine);
-    ctrl.metroLines = metro.getMetroLines();
+    app.metroLines = metro.getMetroLines();
   };
 
-  ctrl.editMetroLine = function() {
-    ctrl.inputMode = metro.setInputMode('edit');
+  app.editMetroLine = function() {
+    app.inputMode = metro.setInputMode('edit');
     var el = metro.getElements();
     el.pointer.
       classed('hide', true)
@@ -89,8 +120,8 @@ angular.module('metro', [])
     ;
   };
 
-  ctrl.draw = function() {
-    ctrl.inputMode = metro.setInputMode('draw');
+  app.draw = function() {
+    app.inputMode = metro.setInputMode('draw');
     var el = metro.getElements();
     el.pointer.
       classed('hide', false)
@@ -103,29 +134,15 @@ angular.module('metro', [])
     ;
   };
 
-  ctrl.implement = function() {
-    ctrl.inputMode = metro.setInputMode('implement');
-    var el = metro.getElements();
-    el.pointer.
-      classed('hide', true)
-    ;
-    el.shade.
-      classed('hide', true)
-    ;
-    el.svg.
-      classed('input-mode-select', false)
-    ;
+  app.useStraightPath = function() {
+    app.pathType = metro.setPathType('straight');
   };
 
-  ctrl.useStraightPath = function() {
-    ctrl.pathType = metro.setPathType('straight');
+  app.useCurlyPath = function() {
+    app.pathType = metro.setPathType('curly');
   };
 
-  ctrl.useCurlyPath = function() {
-    ctrl.pathType = metro.setPathType('curly');
-  };
-
-  ctrl.flipLast = function() {
+  app.flipLast = function() {
     var metroLine = metro.getCurrentMetroLine();
     var layerMetroLine = metroLine.layers.metroLine;
     var layerLinePaths = metroLine.layers.linePaths;
@@ -144,7 +161,7 @@ angular.module('metro', [])
     );
   };
 
-  ctrl.applyLinePathChange = function() {
+  app.applyLinePathChange = function() {
     var linePathJoint = metro.getCurrentEditJoint();
     metro.drawLinePath(
       linePathJoint.data.x1, linePathJoint.data.y1,
@@ -155,7 +172,7 @@ angular.module('metro', [])
     );
   };
 
-  ctrl.splitLinePath = function() {
+  app.splitLinePath = function() {
     var linePathJoint = metro.getCurrentEditJoint();
     var d = linePathJoint.data;
     var dx = (d.x2 - d.x1)/2;
@@ -190,44 +207,10 @@ angular.module('metro', [])
 
     linePathJoint.joint.remove();
     linePathJoint.linePath.remove();
-
-  };
-
-  ctrl.addStation = function() {
-    var metroLine = metro.getCurrentMetroLine();
-
-    if (metro.getPathString(metroLine) == '') {
-      throw 'Empty Metro Line';
-      return;
-    } else {
-      ctrl.implement();
-    }
-
-    var layerStations = metroLine.layers.stations;
-    var station = metro.newStation();
-        station.id = metroLine.stations.length;
-    
-    helper.drawStation(layerStations, station, def);
-
-    metro.addStationObject(station);
-    ctrl.moveStation(metroLine, station);
-  };
-
-  ctrl.moveStation = function(line, station) {
-    station.position = parseFloat(station.position);
-    var metroLine = metro.getMetroLineById(line.id);
-    var layerStations = metroLine.layers.stations;
-    var guide = metroLine.guide.node();
-
-    var d = guide.getPointAtLength(station.position/100*guide.getTotalLength());
-    layerStations.select('.svg-station[station-id="'+station.id+'"]')
-      .attr('x', d.x)
-      .attr('y', d.y)
-    ;
   };
 
   var startWith = 0.76;
-  ctrl.center(ctrl.canvasWidth/2*(1-startWith), ctrl.canvasHeight/2*(1-startWith), startWith);
+  app.center(app.canvasWidth/2*(1-startWith), app.canvasHeight/2*(1-startWith), startWith);
 }])
 
 

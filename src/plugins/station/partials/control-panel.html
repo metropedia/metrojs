@@ -1,0 +1,28 @@
+<h5>Metro Lines</h5> 
+<div ng-repeat="line in app.metroLines track by $index"
+     metroline-id="{{line.id}}">
+  <div class="metroline">
+    <div class="metroline-icon"></div>
+    <input type="text" placeholder="Line Name">
+    <input type="color"
+           ng-model="line.style.color"
+           ng-change="app.updateStyle(line)">
+  </div>
+  <div>
+    <div ng-repeat="station in line.stations track by $index"
+         station-id="{{station.id}}" class="station">
+      <div class="station-icon"></div>
+      <input type="text" placeholder="Station Name">
+      <input type="color">
+      <input type="range" step="0.1" min="0" max="100"
+             style="width: 100px;"
+             ng-model="station.position"
+             ng-change="app.moveStation(line, station)">
+      <input type="number" step="0.1" min="0" max="100"
+             style="width: 50px;"
+             ng-model="station.position"
+             ng-change="app.moveStation(line, station)">
+      <label>%</label>
+    </div>
+  </div>
+</div>
