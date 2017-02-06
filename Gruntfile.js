@@ -1,4 +1,6 @@
 /*global module:false*/
+var babel = require('rollup-plugin-babel');
+
 module.exports = function(grunt) {
 
   // Project configuration.
@@ -66,29 +68,52 @@ module.exports = function(grunt) {
         tasks: ['jshint:lib_test', 'qunit']
       }
     },
-    babel: {
+    rollup: {
+      options: {
+        sourceMaps: true,
+        format: 'umd',
+        moduleName: 'metrojs',
+        plugins: [
+          babel({
+            exclude: './node_modules/**',
+          })
+        ]
+      },
+      dist: {
+        'dest': 'dist/test.js',
+        'src': 'src/test.js', // Only one source file is permitted
+      },
+    },
+    connect: {
+      server: {
         options: {
-            sourceMaps: true,
-            presets: ['es2015']
-        },
-        dist: {
-            files: {
-                'build/test.js': 'src/test.js',
-                'build/test2.js': 'src/test2.js',
+          debug: true,
+          hostname: 'localhost',
+          port: 8080,
+          keepalive: true,
+          base: {
+            path: './',
+            options: {
+              index: 'index.html'
             }
+          }
         }
+      }
     }
   });
 
   // These plugins provide necessary tasks.
-  grunt.loadNpmTasks('grunt-babel');
+  grunt.loadNpmTasks('grunt-rollup');
   grunt.loadNpmTasks('grunt-contrib-concat');
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-qunit');
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-watch');
+  grunt.loadNpmTasks('grunt-contrib-connect');
 
   // Default task.
   //grunt.registerTask('default', ['jshint', 'qunit', 'concat', 'uglify']);
-  grunt.registerTask('build', ['babel']);
+  grunt.registerTask('build', ['babel:build']);
+  grunt.registerTask('dist', ['rollup:dist']);
+  grunt.registerTask('serve', ['connect']);
 };
