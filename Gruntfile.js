@@ -59,6 +59,10 @@ module.exports = function(grunt) {
       files: ['test/**/*.html']
     },
     watch: {
+      es2015: {
+        files: 'src/**/*.js',
+        tasks: ['rollup:dist']
+      },
       gruntfile: {
         files: '<%= jshint.gruntfile.src %>',
         tasks: ['jshint:gruntfile']
@@ -70,19 +74,14 @@ module.exports = function(grunt) {
     },
     rollup: {
       options: {
-        sourceMaps: true,
-        format: 'umd',
         moduleName: 'metrojs',
-        plugins: [
-          babel({
-            exclude: './node_modules/**',
-          })
-        ]
+        format: 'umd',
+        sourceMap: 'inline',
       },
       dist: {
         'dest': 'dist/test.js',
-        'src': 'src/test.js', // Only one source file is permitted
-      },
+        'src': 'src/test.js'
+      }
     },
     connect: {
       server: {
@@ -114,6 +113,7 @@ module.exports = function(grunt) {
   // Default task.
   //grunt.registerTask('default', ['jshint', 'qunit', 'concat', 'uglify']);
   grunt.registerTask('build', ['babel:build']);
+  grunt.registerTask('watchd', ['watch:es2015']);
   grunt.registerTask('dist', ['rollup:dist']);
   grunt.registerTask('serve', ['connect']);
 };
