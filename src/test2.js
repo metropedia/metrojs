@@ -1,1 +1,5 @@
-import * as foo from "test";
+export class Bar {
+  constructor(x) {
+    console.log('bar from es', x);
+  }
+}
