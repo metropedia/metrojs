@@ -1,22 +1,49 @@
 <html>
   <head>
-    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.7/angular.min.js"></script>
-    <script src="https://d3js.org/d3.v4.min.js"></script>
-    <script src="https://d3js.org/d3-selection-multi.v1.min.js"></script>
+    <script src="/node_modules/systemjs/dist/system.js"></script>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/zone.js/0.7.4/zone.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/rxjs/5.0.1/Rx.min.js"></script>
-
-    <script src="../src/app.js"></script>
-    <script src="../src/directives.js"></script>
-    <script src="../src/factories/metro.js"></script>
-    <script src="../src/factories/bbox.js"></script>
-    <script src="../src/helpers.js"></script>
     <link rel="stylesheet" href="../src/stylesheets/default.css">
+    <script>
+      SystemJS.config({
+        meta: {
+          'https://d3js.org/d3.v4.min.js': {
+            exports: 'd3'
+          },
+          'https://d3js.org/d3-selection-multi.v1.min.js': {
+            deps: ['https://d3js.org/d3.v4.min.js'],
+            format: 'global'
+          },
+          'https://cdnjs.cloudflare.com/ajax/libs/rxjs/5.1.0/Rx.min.js': {
+            exports: 'Rx'
+          },
+          '/src/*': {
+            deps: [
+              'https://ajax.googleapis.com/ajax/libs/angularjs/1.5.7/angular.min.js',
+              '/src/app.js'
+            ],
+          },
+        }
+      });
 
-    <!--plugins-->
-    <script src="../src/plugins/station/script.js"></script>
+      Promise.all([
+        SystemJS.import('https://ajax.googleapis.com/ajax/libs/angularjs/1.5.7/angular.min.js'),
+        SystemJS.import('https://d3js.org/d3.v4.min.js'),
+        SystemJS.import('https://d3js.org/d3-selection-multi.v1.min.js'),
+        SystemJS.import('https://cdnjs.cloudflare.com/ajax/libs/zone.js/0.7.4/zone.min.js'),
+        SystemJS.import('https://cdnjs.cloudflare.com/ajax/libs/rxjs/5.1.0/Rx.min.js'),
+        SystemJS.import('/src/app.js'),
+        SystemJS.import('/src/directives.js'),
+        SystemJS.import('/src/factories/metro.js'),
+        SystemJS.import('/src/factories/bbox.js'),
+        SystemJS.import('/src/helpers.js'),
+        SystemJS.import('/src/plugins/station/script.js'),
+      ]).then(function() {
+        Zone.current.run(function() {
+          angular.bootstrap(document, ['metro']);
+        });
+      })
+    </script>
   </head>
   <body>
     <metro-designer
@@ -31,11 +58,5 @@
       }]"
     >
     </metro-designer>
-
-    <script>
-      Zone.current.run(function() {
-        angular.bootstrap(document, ['metro']);
-      });
-    </script>
   </body>
 </html>

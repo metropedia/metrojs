@@ -77,6 +77,11 @@ module.exports = function(grunt) {
         moduleName: 'metrojs',
         format: 'umd',
         sourceMap: 'inline',
+        plugins: [
+          babel({
+            exclude: './node_modules/**'
+          })
+        ]
       },
       dist: {
         'dest': 'dist/test.js',
