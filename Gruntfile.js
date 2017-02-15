@@ -84,8 +84,8 @@ module.exports = function(grunt) {
         ]
       },
       dist: {
-        'dest': 'dist/test.js',
-        'src': 'src/test.js'
+        'dest': 'dist/app.js',
+        'src': 'src/app.js'
       }
     },
     connect: {

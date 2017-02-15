@@ -1,8 +1,10 @@
+import {Metro} from "./factories/metro.es6";
+
 angular.module('metro', [])
 
 .controller('metroDesigner', [
-  '$scope', '$element', '$compile', '$templateRequest', 'Metro', 'metroHelper',
-  function($scope, $element, $compile, $templateRequest, Metro, helper){
+  '$scope', '$element', '$compile', '$templateRequest',
+  function($scope, $element, $compile, $templateRequest){
 
   var root = $element[0];
   var viewport = root.querySelector('.panel-north');
