@@ -17,11 +17,11 @@
           'https://cdnjs.cloudflare.com/ajax/libs/rxjs/5.1.0/Rx.min.js': {
             exports: 'Rx'
           },
+          '/dist/app.js': {
+            deps: ['https://ajax.googleapis.com/ajax/libs/angularjs/1.5.7/angular.min.js']
+          },
           '/src/*': {
-            deps: [
-              'https://ajax.googleapis.com/ajax/libs/angularjs/1.5.7/angular.min.js',
-              '/src/app.js'
-            ],
+            deps: ['/dist/app.js']
           },
         }
       });
@@ -32,9 +32,8 @@
         SystemJS.import('https://d3js.org/d3-selection-multi.v1.min.js'),
         SystemJS.import('https://cdnjs.cloudflare.com/ajax/libs/zone.js/0.7.4/zone.min.js'),
         SystemJS.import('https://cdnjs.cloudflare.com/ajax/libs/rxjs/5.1.0/Rx.min.js'),
-        SystemJS.import('/src/app.js'),
+        SystemJS.import('/dist/app.js'),
         SystemJS.import('/src/directives.js'),
-        SystemJS.import('/src/factories/metro.js'),
         SystemJS.import('/src/factories/bbox.js'),
         SystemJS.import('/src/helpers.js'),
         SystemJS.import('/src/plugins/station/script.js'),

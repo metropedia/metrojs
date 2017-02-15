@@ -2,7 +2,29 @@
   <head>
     <script src="/node_modules/systemjs/dist/system.js"></script>
     <script>
-      SystemJS.import('/dist/test.js');
+      SystemJS.config({
+        meta: {
+          'https://d3js.org/d3.v4.min.js': {
+            exports: 'd3'
+          },
+          'https://d3js.org/d3-selection-multi.v1.min.js': {
+            deps: ['https://d3js.org/d3.v4.min.js'],
+            format: 'global'
+          },
+          'https://cdnjs.cloudflare.com/ajax/libs/rxjs/5.1.0/Rx.min.js': {
+            exports: 'Rx'
+          }
+        }
+      });
+
+      Promise.all([
+        SystemJS.import('https://ajax.googleapis.com/ajax/libs/angularjs/1.5.7/angular.min.js'),
+        SystemJS.import('https://d3js.org/d3.v4.min.js'),
+        SystemJS.import('https://d3js.org/d3-selection-multi.v1.min.js'),
+        SystemJS.import('https://cdnjs.cloudflare.com/ajax/libs/zone.js/0.7.4/zone.min.js'),
+        SystemJS.import('https://cdnjs.cloudflare.com/ajax/libs/rxjs/5.1.0/Rx.min.js'),
+        SystemJS.import('/dist/test.js'),
+      ])
     </script>
   </head>
   <body>
