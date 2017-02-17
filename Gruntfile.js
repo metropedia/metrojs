@@ -61,7 +61,7 @@ module.exports = function(grunt) {
     watch: {
       es2015: {
         files: 'src/**/*.js',
-        tasks: ['rollup:dist']
+        tasks: ['dist']
       },
       gruntfile: {
         files: '<%= jshint.gruntfile.src %>',
@@ -83,10 +83,14 @@ module.exports = function(grunt) {
           })
         ]
       },
-      dist: {
+      app: {
         'dest': 'dist/app.js',
         'src': 'src/app.js'
-      }
+      },
+      plugin_station: {
+        'dest': 'dist/plugins/station.js',
+        'src': 'src/plugins/station/script.js'
+      },
     },
     connect: {
       server: {
@@ -119,6 +123,6 @@ module.exports = function(grunt) {
   //grunt.registerTask('default', ['jshint', 'qunit', 'concat', 'uglify']);
   grunt.registerTask('build', ['babel:build']);
   grunt.registerTask('watchd', ['watch:es2015']);
-  grunt.registerTask('dist', ['rollup:dist']);
+  grunt.registerTask('dist', ['rollup:app', 'rollup:plugin_station']);
   grunt.registerTask('serve', ['connect']);
 };

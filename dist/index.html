@@ -20,6 +20,9 @@
           '/dist/app.js': {
             deps: ['https://ajax.googleapis.com/ajax/libs/angularjs/1.5.7/angular.min.js']
           },
+          '/dist/plugins/station.js': {
+            deps: ['/dist/app.js']
+          },
           '/src/*': {
             deps: ['/dist/app.js']
           },
@@ -33,10 +36,8 @@
         SystemJS.import('https://cdnjs.cloudflare.com/ajax/libs/zone.js/0.7.4/zone.min.js'),
         SystemJS.import('https://cdnjs.cloudflare.com/ajax/libs/rxjs/5.1.0/Rx.min.js'),
         SystemJS.import('/dist/app.js'),
+        SystemJS.import('/dist/plugins/station.js'),
         SystemJS.import('/src/directives.js'),
-        SystemJS.import('/src/factories/bbox.js'),
-        SystemJS.import('/src/helpers.js'),
-        SystemJS.import('/src/plugins/station/script.js'),
       ]).then(function() {
         Zone.current.run(function() {
           angular.bootstrap(document, ['metro']);

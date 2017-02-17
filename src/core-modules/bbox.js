@@ -1,7 +1,7 @@
-angular.module('metro')
+import * as helper from "./helpers";
 
-.factory('metroBBox', ['metroHelper', function(helper) {
-  function constructor(def) {
+export class MetroBBox {
+  constructor(def) {
     this.SELECTION = def.selection;
     this.CONTAINER = def.container;
     this.RESOLUTION = def.resolution;
@@ -14,13 +14,11 @@ angular.module('metro')
     this.orig = null;
   }
 
-  var proto = constructor.prototype;
-
-  proto.getElements = function() {
+  getElements() {
     return this.elements;
   };
 
-  proto.setElements = function(area, tl, tr, br, bl, top, right, bottom, left) {
+  setElements(area, tl, tr, br, bl, top, right, bottom, left) {
     this.elements = {
       area: area,
       tl: tl,
@@ -34,161 +32,48 @@ angular.module('metro')
     };
   };
 
-  proto.setOrigin = function(bbox) {
-    var obj = {};
-    for (var p in bbox) {
+  setOrigin(bbox) {
+    let obj = {};
+    for (let p in bbox) {
       obj[p] = bbox[p];
     }
     this.orig = obj;
   };
 
-  proto.getOrigin = function() {
+  getOrigin() {
     return this.orig;
   };
 
-  proto.setLastEvent = function(xy) {
+  setLastEvent(xy) {
     this.pointerPos = xy;
   };
 
-  proto.getLastEvent = function() {
+  getLastEvent() {
     return this.pointerPos;
   };
 
-  proto.setTransform = function(t) {
+  setTransform(t) {
     this.transform = t;
   };
 
-  proto.getTransform = function() {
+  getTransform() {
     return this.transform;
   };
 
-  proto.snap = function(n) {
+  snap(n) {
     return helper.round(n, this.RESOLUTION);
   };
 
-  var evtHandleDrag = function(proto, dir) {
-    return function() {
-      var x = proto.snap(d3.event.x);
-      var y = proto.snap(d3.event.y);
-      var pointerPos = proto.getLastEvent();
-      var dest;
-      var orig = proto.getOrigin();
-
-      // skip same snapped positions
-      if (pointerPos) {
-        if (pointerPos.x === x && pointerPos.y === y) {
-          //console.log('ignored');
-          return;
-        }
-      }
-      proto.setLastEvent({x: x, y: y});
-      //console.log('updating');
-
-      if (dir == 'tl') {
-        dest = {
-          x: x,
-          y: y,
-          width: orig.x + orig.width - x,
-          height: orig.y + orig.height - y
-        };
-      } else if (dir == 'top') {
-        dest = {
-          x: orig.x,
-          y: y,
-          width: orig.width,
-          height: orig.y + orig.height - y
-        };
-      } else if (dir == 'tr') {
-        dest = {
-          x: orig.x,
-          y: y,
-          width: x - orig.x,
-          height: orig.y + orig.height - y
-        };
-      } else if (dir == 'right') {
-        dest = {
-          x: orig.x,
-          y: orig.y,
-          width: x - orig.x,
-          height: orig.height
-        };
-      } else if (dir == 'br') {
-        dest = {
-          x: orig.x,
-          y: orig.y,
-          width: x - orig.x,
-          height: y - orig.y
-        };
-      } else if (dir == 'bottom') {
-        dest = {
-          x: orig.x,
-          y: orig.y,
-          width: orig.width,
-          height: y - orig.y
-        };
-      } else if (dir == 'bl') {
-        dest = {
-          x: x,
-          y: orig.y,
-          width: orig.x + orig.width - x,
-          height: y - orig.y
-        };
-      } else if (dir == 'left') {
-        dest = {
-          x: x,
-          y: orig.y,
-          width: orig.x + orig.width - x,
-          height: orig.height
-        };
-      }
-
-      var transform = proto.update(dest);
-
-      proto.SELECTION
-        .attr('transform', ''
-         +'translate(' + transform.translateX + ', ' + transform.translateY + ')'
-         +'scale(' + transform.scaleX + ', ' + transform.scaleY + ')'
-        )
-      ;
-
-      proto.setTransform(transform);
-    };
-  };
-
-  var evtHandleDragStart = function(proto, dir) {
-    return function() {
-      console.log('start')
-    };
-  };
-
-  var evtHandleDragEnd = function(proto, dir) {
-    return function() {
-      // Must transform scaled and translated shape back into original
-      // and remove attributes translate and scale
-      var transform = proto.getTransform();
-      if (!transform) return;
-      //console.log(transform)
-      //console.log(proto.SELECTION.attr('d'))
-      var pathString = helper.transformPathString(proto.SELECTION.attr('d'), transform);
-      helper.drawGuide(proto.SELECTION, pathString);
-      //console.log(pathString)
-
-      proto.broadcast('resized', transform);
-      proto.reset();
-      console.log('end')
-    };
-  };
-
-  proto.on = function(evt, cb) {
+  on(evt, cb) {
     this.events[evt] = cb;
   };
 
-  proto.broadcast = function(evt, data) {
+  broadcast(evt, data) {
     this.events[evt].apply(this, [data]);
   };
 
-  proto.reset = function() {
-    var transform = {
+  reset() {
+    const transform = {
       scaleX: 1,
       scaleY: 1,
       translateX: 0,
@@ -202,9 +87,9 @@ angular.module('metro')
       )
     ;
 
-    var elements = this.getElements();
+    const elements = this.getElements();
     if (elements) {
-      for (var p in elements) {
+      for (let p in elements) {
         elements[p].remove();
       }
       this.setElements();
@@ -220,14 +105,14 @@ angular.module('metro')
     this.update();
   };
 
-  proto.render = function() {
-    var proto = this;
-    var area = this.CONTAINER.append('rect')
+  render() {
+    const proto = this;
+    const area = this.CONTAINER.append('rect')
       .style('fill', 'none')
       .classed('bb-line', true)
       .attr('vector-effect', 'non-scaling-stroke')
     ;
-    var tl = this.CONTAINER.append('rect')
+    const tl = this.CONTAINER.append('rect')
       .classed('bb-line tl', true)
       .style('cursor', 'nwse-resize')
       .attr('vector-effect', 'non-scaling-stroke')
@@ -238,7 +123,7 @@ angular.module('metro')
           .on('end', evtHandleDragEnd(proto, 'tl'))
       )
     ;
-    var top = this.CONTAINER.append('rect')
+    const top = this.CONTAINER.append('rect')
       .classed('bb-line top', true)
       .style('cursor', 'ns-resize')
       .attr('vector-effect', 'non-scaling-stroke')
@@ -249,7 +134,7 @@ angular.module('metro')
           .on('end', evtHandleDragEnd(proto, 'top'))
       )
     ;
-    var tr = this.CONTAINER.append('rect')
+    const tr = this.CONTAINER.append('rect')
       .classed('bb-line tr', true)
       .style('cursor', 'nesw-resize')
       .attr('vector-effect', 'non-scaling-stroke')
@@ -260,7 +145,7 @@ angular.module('metro')
           .on('end', evtHandleDragEnd(proto, 'tr'))
       )
     ;
-    var right = this.CONTAINER.append('rect')
+    const right = this.CONTAINER.append('rect')
       .classed('bb-line right', true)
       .style('cursor', 'ew-resize')
       .attr('vector-effect', 'non-scaling-stroke')
@@ -271,7 +156,7 @@ angular.module('metro')
           .on('end', evtHandleDragEnd(proto, 'right'))
       )
     ;
-    var br = this.CONTAINER.append('rect')
+    const br = this.CONTAINER.append('rect')
       .classed('bb-line br', true)
       .style('cursor', 'nwse-resize')
       .attr('vector-effect', 'non-scaling-stroke')
@@ -282,7 +167,7 @@ angular.module('metro')
           .on('end', evtHandleDragEnd(proto, 'br'))
       )
     ;
-    var bottom = this.CONTAINER.append('rect')
+    const bottom = this.CONTAINER.append('rect')
       .classed('bb-line bottom', true)
       .style('cursor', 'ns-resize')
       .attr('vector-effect', 'non-scaling-stroke')
@@ -293,7 +178,7 @@ angular.module('metro')
           .on('end', evtHandleDragEnd(proto, 'bottom'))
       )
     ;
-    var bl = this.CONTAINER.append('rect')
+    const bl = this.CONTAINER.append('rect')
       .classed('bb-line bl', true)
       .style('cursor', 'nesw-resize')
       .attr('vector-effect', 'non-scaling-stroke')
@@ -304,7 +189,7 @@ angular.module('metro')
           .on('end', evtHandleDragEnd(proto, 'bl'))
       )
     ;
-    var left = this.CONTAINER.append('rect')
+    const left = this.CONTAINER.append('rect')
       .classed('bb-line left', true)
       .style('cursor', 'ew-resize')
       .attr('vector-effect', 'non-scaling-stroke')
@@ -318,8 +203,8 @@ angular.module('metro')
     this.setElements(area, tl, tr, br, bl, top, right, bottom, left);
   };
 
-  proto.listen = function() {
-    var elements = this.getElements();
+  listen() {
+    const elements = this.getElements();
     if (!elements) {
       this.render();
     }
@@ -331,17 +216,17 @@ angular.module('metro')
     this.update();
   };
 
-  proto.reload  = function() {
+  reload() {
     this.listen();
   };
 
-  proto.update = function(dest) {
-    var el = this.getElements(),
+  update(dest) {
+    const el = this.getElements(),
         orig = this.getOrigin(),
-        b = dest || orig
+           b = dest || orig
     ;
 
-    var handle = [
+    let handle = [
       { name: 'tl',
         value: { x: b.x -5, y: b.y -5, width: 10, height: 10 } },
       { name: 'top',
@@ -360,14 +245,14 @@ angular.module('metro')
         value: { x: b.x -5, y: b.y + b.height/2 -5, width: 10, height: 10 } },
     ];
 
-    var sorted = angular.copy(handle);
-    var areas = sorted.map(function(h){
+    let sorted = angular.copy(handle);
+    const areas = sorted.map(function(h){
       return Math.abs(h.value.x * h.value.y);
     });
 
     // calculate area size in order to find upper left corner
-    var min = areas.indexOf(Math.min.apply(Math, areas));
-    var max = areas.indexOf(Math.max.apply(Math, areas));
+    const min = areas.indexOf(Math.min.apply(Math, areas));
+    const max = areas.indexOf(Math.max.apply(Math, areas));
     console.log(min, sorted[min].name, max, sorted[max].name);
 
     sorted = [].concat(
@@ -376,7 +261,7 @@ angular.module('metro')
       sorted.slice(0, min)
     );
 
-    var swap;
+    let swap;
     if (min + max === 2) {
       // void area, not possible
     } else if (min + max === 8) {
@@ -393,7 +278,7 @@ angular.module('metro')
     }
 
     //console.log(sorted);
-    var temp = {};
+    let temp = {};
     handle.forEach(function(h, i){
       temp[h.name] = sorted[i].value;
     });
@@ -425,8 +310,8 @@ angular.module('metro')
       .attrs(handle.left);
 
     if (dest) {
-      var scaleX = dest.width/orig.width || 0.000001;
-      var scaleY = dest.height/orig.height || 0.000001;
+      const scaleX = dest.width/orig.width || 0.000001;
+      const scaleY = dest.height/orig.height || 0.000001;
       return {
         scaleX: scaleX,
         scaleY: scaleY,
@@ -442,7 +327,117 @@ angular.module('metro')
       };
     };
   };
+};
 
-  return constructor;
-}])
-;
+const evtHandleDrag = function(proto, dir) {
+  return function() {
+    const x = proto.snap(d3.event.x);
+    const y = proto.snap(d3.event.y);
+    const pointerPos = proto.getLastEvent();
+    let dest;
+    const orig = proto.getOrigin();
+
+    // skip same snapped positions
+    if (pointerPos) {
+      if (pointerPos.x === x && pointerPos.y === y) {
+        //console.log('ignored');
+        return;
+      }
+    }
+    proto.setLastEvent({x: x, y: y});
+    //console.log('updating');
+
+    if (dir == 'tl') {
+      dest = {
+        x: x,
+        y: y,
+        width: orig.x + orig.width - x,
+        height: orig.y + orig.height - y
+      };
+    } else if (dir == 'top') {
+      dest = {
+        x: orig.x,
+        y: y,
+        width: orig.width,
+        height: orig.y + orig.height - y
+      };
+    } else if (dir == 'tr') {
+      dest = {
+        x: orig.x,
+        y: y,
+        width: x - orig.x,
+        height: orig.y + orig.height - y
+      };
+    } else if (dir == 'right') {
+      dest = {
+        x: orig.x,
+        y: orig.y,
+        width: x - orig.x,
+        height: orig.height
+      };
+    } else if (dir == 'br') {
+      dest = {
+        x: orig.x,
+        y: orig.y,
+        width: x - orig.x,
+        height: y - orig.y
+      };
+    } else if (dir == 'bottom') {
+      dest = {
+        x: orig.x,
+        y: orig.y,
+        width: orig.width,
+        height: y - orig.y
+      };
+    } else if (dir == 'bl') {
+      dest = {
+        x: x,
+        y: orig.y,
+        width: orig.x + orig.width - x,
+        height: y - orig.y
+      };
+    } else if (dir == 'left') {
+      dest = {
+        x: x,
+        y: orig.y,
+        width: orig.x + orig.width - x,
+        height: orig.height
+      };
+    }
+
+    const transform = proto.update(dest);
+
+    proto.SELECTION
+      .attr('transform', ''
+       +'translate(' + transform.translateX + ', ' + transform.translateY + ')'
+       +'scale(' + transform.scaleX + ', ' + transform.scaleY + ')'
+      )
+    ;
+
+    proto.setTransform(transform);
+  };
+};
+
+const evtHandleDragStart = function(proto, dir) {
+  return function() {
+    console.log('start')
+  };
+};
+
+const evtHandleDragEnd = function(proto, dir) {
+  return function() {
+    // Must transform scaled and translated shape back into original
+    // and remove attributes translate and scale
+    const transform = proto.getTransform();
+    if (!transform) return;
+    //console.log(transform)
+    //console.log(proto.SELECTION.attr('d'))
+    const pathString = helper.transformPathString(proto.SELECTION.attr('d'), transform);
+    helper.drawGuide(proto.SELECTION, pathString);
+    //console.log(pathString)
+
+    proto.broadcast('resized', transform);
+    proto.reset();
+    console.log('end')
+  };
+};

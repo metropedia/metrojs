@@ -1,4 +1,4 @@
-import {Metro} from "./factories/metro.es6";
+import {Metro} from "./core-modules/metro";
 
 angular.module('metro', [])
 
