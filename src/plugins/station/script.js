@@ -1,6 +1,8 @@
+import * as helper from "../../core-modules/helpers";
+
 angular.module('metro')
 
-.factory('MetroStation', ['metroHelper', function(helper) {
+.factory('MetroStation', [function() {
 
   function constructor(app, metro) {
 

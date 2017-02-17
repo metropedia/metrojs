@@ -1,4 +1,5 @@
-import * as helper from "../helpers.es6";
+import * as helper from "./helpers";
+import {MetroBBox} from "./bbox";
 
 export class Metro {
   constructor(def) {
@@ -72,7 +73,7 @@ export class Metro {
     if (guideData.bbox) {
       guideData.bbox.reload();
     } else {
-      const bbox = new metroBBox({
+      const bbox = new MetroBBox({
         selection: guide,
         container: metroLine.layers.stations,
         resolution: this.resolution,//for snap,
