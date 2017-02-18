@@ -90,6 +90,27 @@ export class Metro {
     return this.zoom;
   };
 
+  zoomIn(s) {
+    this.getElements().svg.transition().call(
+      this.getZoom().scaleBy, s
+    );
+  };
+
+  zoomOut(s) {
+    this.getElements().svg.transition().call(
+      this.getZoom().scaleBy, s
+    );
+  };
+
+  center(x, y, k) {
+    // A known bug to d3 transition
+    // Removing transition as a workaround
+    //this.getElements().svg.transition().call(
+    this.getElements().svg.call(
+      this.getZoom().transform, d3.zoomIdentity.translate(x||0, y||0).scale(k||1)
+    );
+  };
+
   getElements() {
     return this.elements;
   };
