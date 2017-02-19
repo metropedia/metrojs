@@ -194,10 +194,14 @@ export class Metro {
     const layerGuide = layerMetroLine.append('g');
     const layerJoints = layerMetroLine.append('g');
     const layerStations = layerMetroLine.append('g');
-    const metroLine = angular.copy(schemas.metroLine);
+    const metroLine = JSON.parse(JSON.stringify(schemas.metroLine));
     const guide = layerGuide.append('path').attr('class', 'guide');
 
-    angular.extend(metroLine, {
+    (function(destination, source) {
+      for (var property in source)
+        destination[property] = source[property];
+      return destination;
+    })(metroLine, {
       id: this.metroLines.length,
       layers: {
         metroLine: layerMetroLine,
@@ -216,7 +220,7 @@ export class Metro {
   };
 
   newMetroLine() {
-    return angular.copy(schemas.metroLine);
+    return JSON.parse(JSON.stringify(schemas.metroLine));
   };
 
   resetTopLayer() {
@@ -258,7 +262,7 @@ export class Metro {
   };
 
   newStation() {
-    return angular.copy(schemas.station);
+    return JSON.parse(JSON.stringify(schemas.station));
   };
 
   drawLinePath(x1, y1, x2, y2, type, flipped, linePath, insertBefore) {
