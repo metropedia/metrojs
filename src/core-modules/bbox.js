@@ -245,7 +245,7 @@ export class MetroBBox {
         value: { x: b.x -5, y: b.y + b.height/2 -5, width: 10, height: 10 } },
     ];
 
-    let sorted = angular.copy(handle);
+    let sorted = JSON.parse(JSON.stringify(handle));
     const areas = sorted.map(function(h){
       return Math.abs(h.value.x * h.value.y);
     });

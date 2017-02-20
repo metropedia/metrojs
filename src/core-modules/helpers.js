@@ -63,6 +63,7 @@ export function drawShade (container, def) {
     .data([{x: -999, y: -999 }])
     .enter()
     .append('circle')
+      .attr('class', 'shade')
       .attr('cx', function(d) { return d.x; })
       .attr('cy', function(d) { return d.y; })
       .attr('r', def.pointerRadius)
