@@ -30,36 +30,6 @@ angular.module('metro', [])
       app.canvasWidth = metro.width;
       app.canvasHeight = metro.height;
 
-  ($scope.plugins || []).forEach(function(p) {
-    var constructor = angular.injector(['ng', 'metro']).get(p.name).constructor;
-    var plugin = new constructor(app, metro);
-    var base = p.base;
-
-    $templateRequest(base + 'partials/' + p.partials['toolset-primary'], true)
-      .then(function(html) {
-        var compiled = $compile(html)($scope);
-        var container = root.querySelector('.toolset-primary');
-        angular.element(container).append(compiled);
-      })
-    ;
-
-    $templateRequest(base + 'partials/' + p.partials['toolset-secondary'], true)
-      .then(function(html) {
-        var compiled = $compile(html)($scope);
-        var container = root.querySelector('.toolset-secondary');
-        angular.element(container).append(compiled);
-      })
-    ;
-
-    $templateRequest(base + 'partials/' + p.partials['panel-east'], true)
-      .then(function(html) {
-        var compiled = $compile(html)($scope);
-        var container = root.querySelector('.panel-east');
-        angular.element(container).append(compiled);
-      })
-    ;
-  });
-
   metro.on('zooming', function(transform) {
     app.scalePercentage = (transform.k * 100).toFixed(2);
     $scope.$apply();

@@ -28,21 +28,6 @@ export function transformPathString (pathString, transform) {
   ;
 };
 
-export function drawStation (container, station, def) {
-  return container.append('rect')
-    .attr('station-id', station.id)
-    .attr('rx', 6)
-    .attr('ry', 6)
-    .attr('x', round(.5 * def.width, def.resolution))
-    .attr('y', round(.5 * def.height, def.resolution))
-    .attr('width', 22)
-    .attr('height', 22)
-    .attr('transform', 'translate(-11, -11)')
-    .attr('stroke-width', 2)
-    .classed('svg-station', true)
-  ;
-};
-
 export function drawPointer (container, def) {
   return container.selectAll()
     .data([{
