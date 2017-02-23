@@ -532,13 +532,13 @@ const schemas = {
     paths: [],
     stations: [],
     style: {
-      color: '',
+      color: '#000000',
     }
   },
   station: {
     id: -1,
     position: 0,
     name: '',
-    color: ''
+    color: '#000000'
   }
 };
