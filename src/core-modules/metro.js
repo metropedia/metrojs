@@ -1,7 +1,9 @@
+/* eslint-disable */
+import * as d3 from "d3";
 import * as helper from "./helpers";
 import {MetroBBox} from "./bbox";
-
-export class Metro {
+ 
+export default class Metro {
   constructor(def) {
     this.width = def.width;
     this.height = def.height;
@@ -337,7 +339,7 @@ export class Metro {
 
     return linePath;
   };
-}
+};
 
 const evtJointMouseDown = function(metro) {
   return function() {

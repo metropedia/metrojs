@@ -1,4 +1,5 @@
-import {Metro} from "./core-modules/metro";
+import * as d3 from "d3";
+import Metro from "./core-modules/metro";
 
 angular.module('metro', [])
 
