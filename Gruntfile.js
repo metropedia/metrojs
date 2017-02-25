@@ -1,5 +1,6 @@
 /*global module:false*/
 var babel = require('rollup-plugin-babel');
+var nodeResolve = require('rollup-plugin-node-resolve');
 
 module.exports = function(grunt) {
 
@@ -78,6 +79,7 @@ module.exports = function(grunt) {
         format: 'umd',
         sourceMap: 'inline',
         plugins: [
+          nodeResolve(),
           babel({
             exclude: './node_modules/**'
           })
@@ -86,10 +88,6 @@ module.exports = function(grunt) {
       app: {
         'dest': 'dist/app.js',
         'src': 'src/app.js'
-      },
-      plugin_station: {
-        'dest': 'dist/plugins/station.js',
-        'src': 'src/plugins/station/script.js'
       },
     },
     connect: {
@@ -123,6 +121,6 @@ module.exports = function(grunt) {
   //grunt.registerTask('default', ['jshint', 'qunit', 'concat', 'uglify']);
   grunt.registerTask('build', ['babel:build']);
   grunt.registerTask('watchd', ['watch:es2015']);
-  grunt.registerTask('dist', ['rollup:app', 'rollup:plugin_station']);
+  grunt.registerTask('dist', ['rollup:app']);
   grunt.registerTask('serve', ['connect']);
 };

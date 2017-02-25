@@ -1,3 +1,6 @@
+/* eslint-disable */
+import * as d3 from "d3";
+
 export function round(p, n) {
   return p % n < n / 2 ? p - (p % n) : p + n - (p % n);
 };
