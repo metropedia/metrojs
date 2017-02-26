@@ -1,8 +1,12 @@
 /* eslint-disable */
 import * as d3 from "d3";
+import {selection} from "d3-selection";
+import "d3-selection-multi";
 import * as helper from "./helpers";
 import {MetroBBox} from "./bbox";
- 
+
+d3.selection.prototype.attrs = selection.prototype.attrs;
+
 export default class Metro {
   constructor(def) {
     this.width = def.width;
@@ -180,6 +184,7 @@ export default class Metro {
     }
     m.layers.metroLine.classed('current-metroline', true);
     this.currentMetroLine = m;
+    return this.currentMetroLine;
   };
 
   getCurrentMetroLine() {
