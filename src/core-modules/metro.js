@@ -11,7 +11,7 @@ export default class Metro {
   constructor(def) {
     this.width = def.width;
     this.height = def.height;
-    this.resolution = def.resolution;
+    this.resolution = def.resolution || 20;
     this.pointerRadius = def.pointerRadius || 10;
     this.container = def.container;
     this.inputMode = def.inputMode || 'draw';
